@@ -52,12 +52,7 @@ if __name__ == "__main__":
     print(result)`;
       
       case "javascript":
-        return `// JavaScript Solution
-function solution() {
-    // Write your solution here
-    
-}`;
-      
+        return `// JavaScript Solution Here`;
       case "java":
         return `// Java Solution
 public class Main {
