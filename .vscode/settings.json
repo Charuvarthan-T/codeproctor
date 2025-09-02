@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.dbclient-js": "javascript",
+        "LCD_4BIT.C": "cpp"
+    }
+}
