@@ -35,7 +35,7 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  searchColumn?: string; 
+  searchColumn?: string;
   manualPagination?: boolean;
   manualSorting?: boolean;
   manualFiltering?: boolean;
@@ -49,6 +49,7 @@ interface DataTableProps<TData, TValue> {
   onPaginationChange?: (pagination: any) => void;
   onSortingChange?: (sorting: any) => void;
   onGlobalFilterChange?: (filter: string) => void;
+  onRowSelectionChange?: (selectedRows: TData[]) => void;
   loading?: boolean;
 }
 
@@ -65,6 +66,7 @@ export function DataTable<TData, TValue>({
   onPaginationChange,
   onSortingChange,
   onGlobalFilterChange,
+  onRowSelectionChange,
   loading = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -106,6 +108,16 @@ export function DataTable<TData, TValue>({
     manualSorting,
     manualFiltering,
   });
+
+  // Handle row selection changes
+  React.useEffect(() => {
+    if (onRowSelectionChange) {
+      const selectedRows = table
+        .getFilteredSelectedRowModel()
+        .rows.map((row) => row.original);
+      onRowSelectionChange(selectedRows);
+    }
+  }, [rowSelection, onRowSelectionChange, table]);
 
   return (
     <div className="w-full p-4">

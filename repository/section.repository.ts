@@ -46,6 +46,20 @@ export async function assignUserToSection(sectionid: string, userid: string) {
   }
 }
 
+// Unassign a user from a section
+export async function unassignUserFromSection(sectionid: string, userid: string) {
+  try {
+    await sql`
+      DELETE FROM sections_users 
+      WHERE sectionid = ${sectionid} AND userid = ${userid}
+    `;
+    return { status: true };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}
+
 export interface createSectionType{
     name: string;
     semesterid: string;

@@ -1,11 +1,14 @@
 import { user } from "@/types/types";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ColumnDef } from "@tanstack/react-table";
 
 export const createColumns = (
-  refetchData: () => Promise<void>
+  refetchData: () => Promise<void>,
+  isAssigned: boolean = false,
+  onAssign?: (userId: string) => Promise<void>,
+  onUnassign?: (userId: string) => Promise<void>
 ): ColumnDef<user>[] => [
   {
     id: "select",
@@ -76,6 +79,36 @@ export const createColumns = (
   {
     id: "actions",
     enableHiding: false,
-    cell: ({ row }) => {},
+    cell: ({ row }) => {
+      const user = row.original;
+      
+      if (isAssigned && onUnassign) {
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUnassign(user.id)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Minus className="h-4 w-4 mr-1" />
+            Remove
+          </Button>
+        );
+      } else if (!isAssigned && onAssign) {
+        return (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAssign(user.id)}
+            className="text-green-600 hover:text-green-700"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Assign
+          </Button>
+        );
+      }
+      
+      return null;
+    },
   },
 ];

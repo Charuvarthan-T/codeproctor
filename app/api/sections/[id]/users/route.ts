@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getAssignedUsers, getUnassignedUsers, assignUserToSection } from '@/repository/section.repository';
+import { getAssignedUsers, getUnassignedUsers, assignUserToSection, unassignUserFromSection } from '@/repository/section.repository';
 
 export async function GET(
   request: NextRequest,
@@ -42,5 +42,26 @@ export async function POST(
   } catch (error) {
     console.error('Error assigning user:', error);
     return Response.json({ error: 'Failed to assign user' }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: sectionId } = await params;
+  const { userId } = await request.json();
+  
+  try {
+    const result = await unassignUserFromSection(sectionId, userId);
+    
+    if (result.status) {
+      return Response.json({ success: true, message: 'User unassigned successfully' });
+    } else {
+      return Response.json({ error: 'Failed to unassign user', details: result.error }, { status: 500 });
+    }
+  } catch (error) {
+    console.error('Error unassigning user:', error);
+    return Response.json({ error: 'Failed to unassign user' }, { status: 500 });
   }
 }
