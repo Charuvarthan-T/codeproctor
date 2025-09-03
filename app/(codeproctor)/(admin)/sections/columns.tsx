@@ -46,7 +46,7 @@ export const createSectionColumns = (
     accessorKey: "section_name",
     header: ({ column }) => {
       return (
-        <Button
+        <Button 
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
