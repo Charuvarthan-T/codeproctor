@@ -1,3 +1,7 @@
+export type course = {
+  id: string;
+  name: string;
+};
 import NextAuth from "next-auth";
 
 declare module "next-auth" {

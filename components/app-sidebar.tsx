@@ -57,6 +57,11 @@ const sidebarItems: SidebarItem[] = [
     href: "/sections",
     icon: Presentation,
   },
+   {
+    label: "Courses",
+    href: "/courses",
+    icon: BookOpen,
+  },
   {
     label: "Editor",
     href: "/editor",
