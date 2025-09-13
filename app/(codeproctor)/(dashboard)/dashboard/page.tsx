@@ -1,12 +1,12 @@
 import React from "react";
 
-export default function dashboard() {
+export default function Dashboard() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-foreground">Dashboard</h1>
-      <div className="rounded-lg border bg-card shadow-sm p-4">
+    <div className="flex flex-1 items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold mb-2">Loading Dashboard...</h1>
         <p className="text-muted-foreground">
-          Dashboard content coming soon...
+          Please wait while we load your personalized dashboard.
         </p>
       </div>
     </div>
