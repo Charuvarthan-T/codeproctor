@@ -19,10 +19,10 @@ export default function ProblemsPage() {
   const [totalRows, setTotalRows] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const router = useRouter();
-  const {data: session} = useSession();
+  const { data: session } = useSession();
   const user = session?.user;
-  if(!user){
-    return <h1>Please login first</h1>
+  if (!user) {
+    return <h1>Please login first</h1>;
   }
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function ProblemsPage() {
     try {
       const sortBy = sorting.length > 0 ? sorting[0].id : "id";
       const sortOrder = sorting.length > 0 && sorting[0].desc ? "desc" : "asc";
-      
+
       const params = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
@@ -48,7 +48,7 @@ export default function ProblemsPage() {
       if (!problems.ok) {
         throw new Error("Failed to fetch problems");
       }
-      
+
       const res = await problems.json();
       setData(res.data);
       setTotalRows(res.total);
@@ -66,7 +66,7 @@ export default function ProblemsPage() {
     await getData();
   };
 
-  const columns = createColumns(refetchData);
+  const columns = createColumns(refetchData, router, user?.role || undefined);
 
   return (
     <div>
@@ -79,9 +79,9 @@ export default function ProblemsPage() {
         )}
       </h1>
       <div className="rounded-lg border bg-card shadow-sm">
-        <DataTable 
-          columns={columns} 
-          data={data} 
+        <DataTable
+          columns={columns}
+          data={data}
           searchColumn="title"
           manualPagination={true}
           manualSorting={true}

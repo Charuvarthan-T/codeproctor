@@ -17,7 +17,7 @@ export default function CodeProctorLayout({ children }: LayoutProps) {
       <AppSidebar />
       <div className="flex flex-1 flex-col">
         <AppHeader />
-        <main className="flex flex-1 flex-col p-2">{children}</main>
+        <main className="flex flex-1 flex-col p-4">{children}</main>
       </div>
     </SidebarProvider>
   );

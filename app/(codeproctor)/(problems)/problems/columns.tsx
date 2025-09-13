@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/dialog";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
 export const createColumns = (
-  refetchData: () => Promise<void>
+  refetchData: () => Promise<void>,
+  router: any,
+  userRole: string | undefined
 ): ColumnDef<problem>[] => [
   {
     id: "select",
@@ -114,21 +115,24 @@ export const createColumns = (
   {
     accessorKey: "is_completed",
     header: "Status",
-    cell:({row}) => {
+    cell: ({ row }) => {
       const isCompleted = row.getValue("is_completed") as string;
       return (
         <div className="flex items-center">
-          {(isCompleted === "solved") && <Badge variant="outline" className="text-green-500">Solved</Badge>}
+          {isCompleted === "solved" && (
+            <Badge variant="outline" className="text-green-500">
+              Solved
+            </Badge>
+          )}
         </div>
       );
-    }
+    },
   },
   {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
       const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-      const router = useRouter();
 
       const handleDelete = () => {
         setIsDeleteDialogOpen(true);
@@ -143,7 +147,7 @@ export const createColumns = (
           const res = await fetch(`/api/problems/${problemId}`, {
             method: "DELETE",
           });
-          
+
           if (res.ok) {
             setIsDeleteDialogOpen(false);
             await refetchData();
@@ -179,21 +183,26 @@ export const createColumns = (
               <DropdownMenuItem onClick={handleView}>
                 View Problem
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleEdit}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete}>
-                Delete
-              </DropdownMenuItem>
+              {userRole === "admin" && (
+                <>
+                  <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDelete}>
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <Dialog
+            open={isDeleteDialogOpen}
+            onOpenChange={setIsDeleteDialogOpen}
+          >
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Delete Problem</DialogTitle>
                 <DialogDescription>
-                  {`Are you sure you want to delete "{row.original.title}"? This action cannot be undone.`}
+                  {`Are you sure you want to delete "${row.original.title}"? This action cannot be undone.`}
                 </DialogDescription>
               </DialogHeader>
               <div className="flex justify-end space-x-2">

@@ -71,6 +71,14 @@ export default function Page() {
 
   const {data: session} = useSession();
 
+  if(!session?.user){
+    return <h1>Please login first</h1>
+  }
+
+  if(session.user.role !== "admin" && session.user.role !== "faculty"){
+    return <h1>Access Denied</h1>
+  }
+
   useEffect(() => {
     fetchTags();
   }, []);
