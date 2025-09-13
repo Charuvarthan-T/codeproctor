@@ -5,11 +5,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuTrigger
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
 
-interface getSectionType{
+interface getSectionType {
   id: string;
   section_name: string;
   semester_name: string;
@@ -18,7 +19,8 @@ interface getSectionType{
 
 export const createSectionColumns = (
   refetchData: () => Promise<void>,
-  openEditDialog: (section: getSectionType) => void
+  openEditDialog: (section: getSectionType) => void,
+  router: any
 ): ColumnDef<getSectionType>[] => [
   {
     id: "select",
@@ -46,11 +48,11 @@ export const createSectionColumns = (
     accessorKey: "section_name",
     header: ({ column }) => {
       return (
-        <Button 
+        <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Section 
+          Section
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -64,7 +66,7 @@ export const createSectionColumns = (
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Semester 
+          Semester
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -78,7 +80,7 @@ export const createSectionColumns = (
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Department 
+          Department
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -88,9 +90,12 @@ export const createSectionColumns = (
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      
       const handleDeleteSection = async () => {
-        if (confirm(`Are you sure you want to delete the section "${row.original.section_name}"?`)) {
+        if (
+          confirm(
+            `Are you sure you want to delete the section "${row.original.section_name}"?`
+          )
+        ) {
           try {
             const response = await fetch("/api/sections", {
               method: "DELETE",
@@ -104,7 +109,9 @@ export const createSectionColumns = (
               await refetchData();
             } else {
               const error = await response.json();
-              alert(`Failed to delete section: ${error.error || "Unknown error"}`);
+              alert(
+                `Failed to delete section: ${error.error || "Unknown error"}`
+              );
             }
           } catch (error) {
             console.error("Error deleting section:", error);
@@ -115,6 +122,10 @@ export const createSectionColumns = (
 
       const handleEditSection = () => {
         openEditDialog(row.original);
+      };
+
+      const handleViewCourses = () => {
+        router.push("/sections/" + row.original.id + "/courses");
       };
 
       return (
@@ -128,18 +139,21 @@ export const createSectionColumns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={handleViewCourses}>
+                View Courses
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  router.push("/sections/" + row.original.id + "/assign");
+                }}
+              >
+                Assign User
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleEditSection}>
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDeleteSection}>
                 Delete
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  window.location.href = `/sections/${row.original.id}`;
-                }}
-              >
-                Assign User
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

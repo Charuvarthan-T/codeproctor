@@ -194,3 +194,22 @@ export async function deleteSection(id: string){
         return false;
     }
 }
+
+export async function getCoursesForSection(sectionid: string) {
+  try {
+    const courses = await sql`
+      SELECT * FROM courses
+      WHERE id IN (
+        SELECT course_id FROM semesters_courses
+        WHERE sem_id = (
+          SELECT semesterid FROM sections
+          WHERE id = ${sectionid}
+        )
+      )
+    `;
+    return { status: true, data: courses };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}

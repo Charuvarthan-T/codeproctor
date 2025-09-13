@@ -22,6 +22,7 @@ import { department, semester } from "@/types/types";
 import { createSectionType } from "@/repository/section.repository";
 import { Label } from "@/components/ui/label";
 import { DialogFooter } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [sections, setSections] = useState([]);
@@ -45,6 +46,8 @@ export default function Page() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editSection, setEditSection] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     getData();
@@ -190,7 +193,7 @@ export default function Page() {
       </div>
       <div className="rounded-lg border bg-card shadow-sm p-4">
         <DataTable
-          columns={createSectionColumns(refetchData, openEditDialog)}
+          columns={createSectionColumns(refetchData, openEditDialog, router)}
           data={sections}
           searchColumn="section_name"
           manualPagination={true}
