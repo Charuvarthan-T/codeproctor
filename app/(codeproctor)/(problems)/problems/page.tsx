@@ -21,13 +21,12 @@ export default function ProblemsPage() {
   const router = useRouter();
   const { data: session } = useSession();
   const user = session?.user;
-  if (!user) {
-    return <h1>Please login first</h1>;
-  }
 
   useEffect(() => {
-    getData();
-  }, [pagination, sorting, globalFilter]);
+    if (user) {
+      getData();
+    }
+  }, [pagination, sorting, globalFilter, user]);
 
   async function getData(): Promise<void> {
     setLoading(true);
@@ -67,6 +66,10 @@ export default function ProblemsPage() {
   };
 
   const columns = createColumns(refetchData, router, user?.role || undefined);
+
+  if (!user) {
+    return <h1>Please login first</h1>;
+  }
 
   return (
     <div>
