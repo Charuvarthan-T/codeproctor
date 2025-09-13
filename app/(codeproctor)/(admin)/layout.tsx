@@ -17,7 +17,6 @@ export default async function AdminLayout({ children }: LayoutProps) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <AppHeader />
       <main className="flex flex-1 flex-col p-2">{children}</main>
     </div>
   );

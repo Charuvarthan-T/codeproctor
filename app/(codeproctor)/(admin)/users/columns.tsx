@@ -176,8 +176,8 @@ export const createColumns = (
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="learner">Learner</SelectItem>
+                  <SelectItem value="faculty">Faculty</SelectItem>
+                  <SelectItem value="student">Student</SelectItem>
                 </SelectContent>
               </Select>
             </DialogContent>
