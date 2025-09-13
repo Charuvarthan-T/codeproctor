@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function ProblemsPage() {
   const [data, setData] = useState<problem[]>([]);
@@ -18,6 +19,11 @@ export default function ProblemsPage() {
   const [totalRows, setTotalRows] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const router = useRouter();
+  const {data: session} = useSession();
+  const user = session?.user;
+  if(!user){
+    return <h1>Please login first</h1>
+  }
 
   useEffect(() => {
     getData();
@@ -66,9 +72,11 @@ export default function ProblemsPage() {
     <div>
       <h1 className="text-3xl font-bold mb-6 text-foreground flex justify-between">
         <div>Problems Page</div>
-        <Button onClick={() => router.push("/problems/create")}>
-          Create Problem
-        </Button>
+        {user.role === "admin" && (
+          <Button onClick={() => router.push("/problems/create")}>
+            Create Problem
+          </Button>
+        )}
       </h1>
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable 
