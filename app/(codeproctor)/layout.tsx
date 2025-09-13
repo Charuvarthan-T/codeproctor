@@ -12,17 +12,13 @@ interface LayoutProps {
 export default function CodeProctorLayout({ children }: LayoutProps) {
   const { data: session } = useSession();
 
-  return session?.user.role === "admin" ? (
+  return (
     <SidebarProvider>
       <AppSidebar />
       <div className="flex flex-1 flex-col">
-        <AppHeader /> 
+        <AppHeader />
         <main className="flex flex-1 flex-col p-2">{children}</main>
       </div>
     </SidebarProvider>
-  ) : (
-    <div>
-      <h1>Unauthorised Access. Prohibited entry into site.</h1>
-    </div>
   );
 }
