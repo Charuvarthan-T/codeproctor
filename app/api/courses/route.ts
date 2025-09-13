@@ -6,29 +6,16 @@ import {
   editCourse,
   deleteCourse,
 } from "../../../repository/course.repository";
-import { requireAdmin } from "@/lib/auth-helpers";
 
 export async function GET(req: NextRequest) {
   try {
-    // Only admin can view all courses
-    const authResult = await requireAdmin();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
-
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const search = searchParams.get("search") || "";
     const sortBy = searchParams.get("sortBy") || "id";
     const sortOrder = searchParams.get("sortOrder") || "asc";
-    const result = await getCoursesWithPagination(
-      page,
-      pageSize,
-      search,
-      sortBy,
-      sortOrder
-    );
+    const result = await getCoursesWithPagination(page, pageSize, search, sortBy, sortOrder);
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching courses:", error);
@@ -41,11 +28,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(request: Request) {
   try {
-    // Only admin can create courses
-    const authResult = await requireAdmin();
-    if (authResult instanceof NextResponse) {
-      return authResult;
-    }
     const body = await request.json();
     const result = await createCourse(body);
     if (result.success) {

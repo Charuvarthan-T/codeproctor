@@ -4,19 +4,10 @@ import { createCourseColumns } from "./columns";
 import { course } from "@/types/types";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
-import { AdminOnly } from "@/components/auth/role-based";
 
 export default function CoursesPage() {
   const [data, setData] = useState<course[]>([]);
@@ -45,7 +36,7 @@ export default function CoursesPage() {
     try {
       const sortBy = sorting.length > 0 ? sorting[0].id : "id";
       const sortOrder = sorting.length > 0 && sorting[0].desc ? "desc" : "asc";
-
+      
       const params = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
@@ -59,7 +50,7 @@ export default function CoursesPage() {
       if (!courses.ok) {
         throw new Error("Failed to fetch courses");
       }
-
+      
       const res = await courses.json();
       setData(res.data);
       setTotalRows(res.total);
@@ -244,7 +235,7 @@ export default function CoursesPage() {
                 id="edit-name"
                 value={editCourse?.name || ""}
                 onChange={(e) =>
-                  setEditCourse((prev) =>
+                  setEditCourse(prev =>
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }

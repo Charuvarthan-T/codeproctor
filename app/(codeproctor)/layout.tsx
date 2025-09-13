@@ -3,39 +3,16 @@ import { ReactNode } from "react";
 import AppSidebar from "@/components/app-sidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/app-header";
-import { useRoleAccess } from "@/hooks/use-role-access";
+import { useSession } from "next-auth/react";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 export default function CodeProctorLayout({ children }: LayoutProps) {
-  const { role, isLoading } = useRoleAccess();
+  const { data: session } = useSession();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!role || !["admin", "faculty", "student", "learner"].includes(role)) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-destructive mb-4">
-            Unauthorized Access
-          </h1>
-          <p className="text-muted-foreground">
-            You don't have permission to access this application.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  return session?.user.role === "admin" ? (
     <SidebarProvider>
       <AppSidebar />
       <div className="flex flex-1 flex-col">
@@ -43,5 +20,9 @@ export default function CodeProctorLayout({ children }: LayoutProps) {
         <main className="flex flex-1 flex-col p-2">{children}</main>
       </div>
     </SidebarProvider>
+  ) : (
+    <div>
+      <h1>Unauthorised Access. Prohibited entry into site.</h1>
+    </div>
   );
 }
