@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import {
   getSemestersWithPagination,
-  getSemesterById,
   createSemester,
   editSemester,
   deleteSemester,
@@ -10,23 +9,6 @@ import {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    
-    // Check if requesting a single semester by ID
-    const id = searchParams.get("id");
-    if (id) {
-      const result = await getSemesterById(id);
-      if (result.status) {
-        return new Response(JSON.stringify(result.data), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      } else {
-        return new Response(JSON.stringify({ error: "Semester not found" }), {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
-    }
     
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");

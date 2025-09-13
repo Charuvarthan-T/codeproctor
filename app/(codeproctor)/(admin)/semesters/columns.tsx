@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export const createSemesterColumns = (
   refetchData: () => Promise<void>,
@@ -87,7 +86,6 @@ export const createSemesterColumns = (
     enableHiding: false,
     cell: ({ row }) => {
       const [isDialogOpen, setIsDialogOpen] = useState(false);
-      const router = useRouter();
 
       const handleDeleteSemester = async () => {
         if (confirm(`Are you sure you want to delete the semester "${row.original.name} (${row.original.year})"?`)) {
@@ -113,10 +111,6 @@ export const createSemesterColumns = (
         openEditDialog(row.original);
       };
 
-      const handleViewCourses = () => {
-        router.push(`/semesters/${row.original.id}/courses`);
-      };
-
       const handleAssignRole = () => {
         setIsDialogOpen(true);
       };
@@ -140,9 +134,6 @@ export const createSemesterColumns = (
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleEditSemester}>
                 Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleViewCourses}>
-                View Courses
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDeleteSemester}>
                 Delete

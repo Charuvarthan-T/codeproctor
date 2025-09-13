@@ -13,22 +13,6 @@ export async function getAllSemesters(){
     }
 }
 
-export async function getSemesterById(id: string){
-    try{
-        const data = await sql`select id,name,year from semesters where id=${id}`;
-        
-        if (data.length === 0) {
-            return {status: false, error: "Semester not found"};
-        }
-
-        return {status: true, data: data[0]};
-    }
-    catch(e){
-        console.log(e);
-        return {status: false, error: e};
-    }
-}
-
 export async function getSemestersWithPagination(
   page: number,
   pageSize: number,
