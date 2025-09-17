@@ -13,6 +13,7 @@ import {
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export const createSemesterColumns = (
   refetchData: () => Promise<void>,
@@ -101,6 +102,7 @@ export const createSemesterColumns = (
     enableHiding: false,
     cell: ({ row }) => {
       const [isDialogOpen, setIsDialogOpen] = useState(false);
+      const router = useRouter();
 
       const handleDeleteSemester = async () => {
         if (
@@ -139,6 +141,10 @@ export const createSemesterColumns = (
       const handleAssignRole = () => {
         setIsDialogOpen(true);
       };
+      const handleViewCourses = () => {
+        router.push(`/semesters/${row.original.id}/courses`);
+      };
+      
 
       return (
         <>
@@ -159,6 +165,9 @@ export const createSemesterColumns = (
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleEditSemester}>
                 Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleViewCourses}>
+                View Courses
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDeleteSemester}>
                 Delete
