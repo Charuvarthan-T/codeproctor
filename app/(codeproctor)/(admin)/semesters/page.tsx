@@ -4,10 +4,27 @@ import { createSemesterColumns } from "./columns";
 import { semester } from "@/types/types";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 export default function SemestersPage() {
   const [data, setData] = useState<semester[]>([]);
@@ -26,6 +43,11 @@ export default function SemestersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editSemester, setEditSemester] = useState<semester | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [departments, setDepartments] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedSemester, setSelectedSemester] = useState<string>("");
 
   useEffect(() => {
     getData();
@@ -36,7 +58,7 @@ export default function SemestersPage() {
     try {
       const sortBy = sorting.length > 0 ? sorting[0].id : "id";
       const sortOrder = sorting.length > 0 && sorting[0].desc ? "desc" : "asc";
-      
+
       const params = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
@@ -46,15 +68,24 @@ export default function SemestersPage() {
       });
 
       const semesters = await fetch(`/api/semesters?${params.toString()}`);
+      const departments = await fetch(`/api/departments/all`);
+      if (!departments.ok) {
+        toast("Failed to fetch departments");
+        throw new Error("Failed to fetch departments");
+      }
+      const deptRes = await departments.json();
+      console.log(deptRes);
+      setDepartments(deptRes.data || []);
 
       if (!semesters.ok) {
+        toast("Failed to fetch semesters");
         throw new Error("Failed to fetch semesters");
       }
-      
+
       const res = await semesters.json();
-      setData(res.data);
-      setTotalRows(res.total);
-      setTotalPages(res.totalPages);
+      setData(res.data || []);
+      setTotalRows(res.total || 0);
+      setTotalPages(res.totalPages || 0);
       console.log(res);
     } catch (error) {
       console.error("Error fetching semesters:", error);
@@ -69,10 +100,27 @@ export default function SemestersPage() {
   }
 
   async function handleCreateSemester(): Promise<void> {
-    if (!newSemester.name.trim() || !newSemester.year.trim()) {
-      alert("Please enter both semester name and year");
+    if (
+      selectedSemester === "" ||
+      selectedDepartment === "" ||
+      newSemester.year.trim() === ""
+    ) {
+      toast("Please select a semester, department, and enter the year");
       return;
     }
+
+    // Find the department name based on selected department ID
+    const selectedDept = departments.find(
+      (dept: any) => dept.id === selectedDepartment
+    );
+    const selectedDeptName = selectedDept ? selectedDept.name : "";
+
+    if (!selectedDeptName) {
+      toast("Department not found. Please try again.");
+      return;
+    }
+
+    const generatedSemesterName = `${newSemester.year}-Semester-${selectedSemester}-${selectedDeptName}`;
 
     setCreateLoading(true);
     try {
@@ -82,22 +130,26 @@ export default function SemestersPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: newSemester.name.trim(),
+          name: generatedSemesterName,
           year: newSemester.year.trim(),
+          department_id: selectedDepartment,
         }),
       });
 
       if (response.ok) {
         setIsCreateDialogOpen(false);
         setNewSemester({ name: "", year: "" });
+        setSelectedDepartment("");
+        setSelectedSemester("");
+        toast("Semester created successfully!");
         await refetchData();
       } else {
         const error = await response.json();
-        alert(`Failed to create semester: ${error.error || "Unknown error"}`);
+        toast(`Failed to create semester: ${error.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error creating semester:", error);
-      alert("Failed to create semester");
+      toast("Failed to create semester");
     } finally {
       setCreateLoading(false);
     }
@@ -105,7 +157,7 @@ export default function SemestersPage() {
 
   async function handleEditSemester(): Promise<void> {
     if (!editSemester?.name.trim() || !String(editSemester?.year).trim()) {
-      alert("Please enter both semester name and year");
+      toast("Please enter both semester name and year");
       return;
     }
 
@@ -120,20 +172,22 @@ export default function SemestersPage() {
           id: editSemester.id,
           name: editSemester.name.trim(),
           year: String(editSemester.year).trim(),
+          dept_id: editSemester.dept_id,
         }),
       });
 
       if (response.ok) {
         setIsEditDialogOpen(false);
         setEditSemester(null);
+        toast("Semester updated successfully!");
         await refetchData();
       } else {
         const error = await response.json();
-        alert(`Failed to update semester: ${error.error || "Unknown error"}`);
+        toast(`Failed to update semester: ${error.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error updating semester:", error);
-      alert("Failed to update semester");
+      toast("Failed to update semester");
     } finally {
       setEditLoading(false);
     }
@@ -167,15 +221,28 @@ export default function SemestersPage() {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
-                  Name
+                  Semester
                 </Label>
-                <Input
-                  id="name"
-                  value={newSemester.name}
-                  onChange={(e) => setNewSemester(prev => ({ ...prev, name: e.target.value }))}
-                  className="col-span-3"
-                  placeholder="Enter semester name"
-                />
+                <Select
+                  value={selectedSemester}
+                  onValueChange={setSelectedSemester}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="8">8</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="year" className="text-right">
@@ -184,11 +251,51 @@ export default function SemestersPage() {
                 <Input
                   id="year"
                   value={newSemester.year}
-                  onChange={(e) => setNewSemester(prev => ({ ...prev, year: e.target.value }))}
+                  onChange={(e) =>
+                    setNewSemester((prev) => ({
+                      ...prev,
+                      year: e.target.value,
+                    }))
+                  }
                   className="col-span-3"
                   placeholder="Enter year (e.g., 2024)"
                 />
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="department" className="text-right">
+                  Department
+                </Label>
+                <Select
+                  value={selectedDepartment}
+                  onValueChange={setSelectedDepartment}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {departments.map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Preview of semester name */}
+              {selectedSemester && selectedDepartment && newSemester.year && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right text-sm text-muted-foreground">
+                    Preview:
+                  </Label>
+                  <div className="col-span-3 text-sm text-muted-foreground">
+                    {newSemester.year}-Semester-{selectedSemester}-
+                    {departments.find((d) => d.id === selectedDepartment)
+                      ?.name || ""}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button
@@ -197,6 +304,8 @@ export default function SemestersPage() {
                 onClick={() => {
                   setIsCreateDialogOpen(false);
                   setNewSemester({ name: "", year: "" });
+                  setSelectedDepartment("");
+                  setSelectedSemester("");
                 }}
               >
                 Cancel
@@ -252,7 +361,7 @@ export default function SemestersPage() {
                 id="edit-name"
                 value={editSemester?.name || ""}
                 onChange={(e) =>
-                  setEditSemester(prev =>
+                  setEditSemester((prev) =>
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }
@@ -268,7 +377,7 @@ export default function SemestersPage() {
                 id="edit-year"
                 value={String(editSemester?.year || "")}
                 onChange={(e) =>
-                  setEditSemester(prev =>
+                  setEditSemester((prev) =>
                     prev ? { ...prev, year: e.target.value } : null
                   )
                 }

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export const createSemesterColumns = (
   refetchData: () => Promise<void>,
@@ -65,7 +66,7 @@ export const createSemesterColumns = (
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
-    }
+    },
   },
   {
     accessorKey: "year",
@@ -82,27 +83,51 @@ export const createSemesterColumns = (
     },
   },
   {
+    accessorKey: "department_name",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Department
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
       const [isDialogOpen, setIsDialogOpen] = useState(false);
 
       const handleDeleteSemester = async () => {
-        if (confirm(`Are you sure you want to delete the semester "${row.original.name} (${row.original.year})"?`)) {
+        if (
+          confirm(
+            `Are you sure you want to delete the semester "${row.original.name} (${row.original.year})"?`
+          )
+        ) {
           try {
-            const response = await fetch(`/api/semesters?id=${row.original.id}`, {
-              method: "DELETE",
-            });
+            const response = await fetch(
+              `/api/semesters?id=${row.original.id}`,
+              {
+                method: "DELETE",
+              }
+            );
 
             if (response.ok) {
+              toast("Semester deleted successfully!");
               await refetchData();
             } else {
               const error = await response.json();
-              alert(`Failed to delete semester: ${error.error || "Unknown error"}`);
+              toast(
+                `Failed to delete semester: ${error.error || "Unknown error"}`
+              );
             }
           } catch (error) {
             console.error("Error deleting semester:", error);
-            alert("Failed to delete semester");
+            toast("Failed to delete semester");
           }
         }
       };

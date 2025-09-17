@@ -34,6 +34,8 @@ export type semester = {
   id: string;
   name: string;
   year: string | number;
+  dept_id?: string;
+  department_name?: string;
 };
 
 export type department = {
