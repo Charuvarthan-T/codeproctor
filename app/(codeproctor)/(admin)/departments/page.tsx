@@ -4,10 +4,20 @@ import { createDepartmentColumns } from "./columns";
 import { department } from "@/types/types";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function DepartmentsPage() {
   const [data, setData] = useState<department[]>([]);
@@ -26,6 +36,9 @@ export default function DepartmentsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editDepartment, setEditDepartment] = useState<department | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] =
+    useState<department | null>(null);
 
   useEffect(() => {
     getData();
@@ -36,7 +49,7 @@ export default function DepartmentsPage() {
     try {
       const sortBy = sorting.length > 0 ? sorting[0].id : "id";
       const sortOrder = sorting.length > 0 && sorting[0].desc ? "desc" : "asc";
-      
+
       const params = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
@@ -50,7 +63,7 @@ export default function DepartmentsPage() {
       if (!departments.ok) {
         throw new Error("Failed to fetch departments");
       }
-      
+
       const res = await departments.json();
       setData(res.data);
       setTotalRows(res.total);
@@ -70,7 +83,7 @@ export default function DepartmentsPage() {
 
   async function handleCreateDepartment(): Promise<void> {
     if (!newDepartmentName.trim()) {
-      alert("Please enter a department name");
+      toast.error("Please enter a department name");
       return;
     }
 
@@ -88,13 +101,16 @@ export default function DepartmentsPage() {
         setIsCreateDialogOpen(false);
         setNewDepartmentName("");
         await refetchData();
+        toast.success("Department created successfully");
       } else {
         const error = await response.json();
-        alert(`Failed to create department: ${error.error || "Unknown error"}`);
+        toast.error(
+          `Failed to create department: ${error.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error creating department:", error);
-      alert("Failed to create department");
+      toast.error("Failed to create department");
     } finally {
       setCreateLoading(false);
     }
@@ -102,7 +118,7 @@ export default function DepartmentsPage() {
 
   async function handleEditDepartment(): Promise<void> {
     if (!editDepartment?.name.trim()) {
-      alert("Please enter a department name");
+      toast.error("Please enter a department name");
       return;
     }
 
@@ -123,13 +139,16 @@ export default function DepartmentsPage() {
         setIsEditDialogOpen(false);
         setEditDepartment(null);
         await refetchData();
+        toast.success("Department updated successfully");
       } else {
         const error = await response.json();
-        alert(`Failed to update department: ${error.error || "Unknown error"}`);
+        toast.error(
+          `Failed to update department: ${error.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error updating department:", error);
-      alert("Failed to update department");
+      toast.error("Failed to update department");
     } finally {
       setEditLoading(false);
     }
@@ -138,6 +157,37 @@ export default function DepartmentsPage() {
   function openEditDialog(department: department): void {
     setEditDepartment({ ...department });
     setIsEditDialogOpen(true);
+  }
+
+  function openDeleteDialog(department: department): void {
+    setDepartmentToDelete(department);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteDepartment(): Promise<void> {
+    if (!departmentToDelete) return;
+
+    try {
+      const response = await fetch(
+        `/api/departments?id=${departmentToDelete.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        await refetchData();
+        toast.success("Department deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(
+          `Failed to delete department: ${error.error || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting department:", error);
+      toast.error("Failed to delete department");
+    }
   }
 
   return (
@@ -198,7 +248,11 @@ export default function DepartmentsPage() {
       </div>
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable
-          columns={createDepartmentColumns(refetchData, openEditDialog)}
+          columns={createDepartmentColumns(
+            refetchData,
+            openEditDialog,
+            openDeleteDialog
+          )}
           data={data}
           searchColumn="name"
           manualPagination={true}
@@ -235,7 +289,7 @@ export default function DepartmentsPage() {
                 id="edit-name"
                 value={editDepartment?.name || ""}
                 onChange={(e) =>
-                  setEditDepartment(prev =>
+                  setEditDepartment((prev) =>
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }
@@ -265,6 +319,16 @@ export default function DepartmentsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Department"
+        description={`Are you sure you want to delete the department "${departmentToDelete?.name}"? This action cannot be undone.`}
+        onConfirm={handleDeleteDepartment}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

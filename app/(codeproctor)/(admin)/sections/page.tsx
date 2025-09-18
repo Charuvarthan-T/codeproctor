@@ -23,6 +23,8 @@ import { createSectionType } from "@/repository/section.repository";
 import { Label } from "@/components/ui/label";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function Page() {
   const [sections, setSections] = useState([]);
@@ -46,6 +48,8 @@ export default function Page() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editSection, setEditSection] = useState<any>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [sectionToDelete, setSectionToDelete] = useState<any>(null);
 
   const router = useRouter();
 
@@ -139,7 +143,7 @@ export default function Page() {
       !editSection?.departmentid ||
       !editSection?.semesterid
     ) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -163,13 +167,16 @@ export default function Page() {
         setIsEditDialogOpen(false);
         setEditSection(null);
         await refetchData();
+        toast.success("Section updated successfully");
       } else {
         const error = await response.json();
-        alert(`Failed to update section: ${error.error || "Unknown error"}`);
+        toast.error(
+          `Failed to update section: ${error.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error updating section:", error);
-      alert("Failed to update section");
+      toast.error("Failed to update section");
     } finally {
       setEditLoading(false);
     }
@@ -179,6 +186,38 @@ export default function Page() {
     getSectionSemester();
     setEditSection({ ...section });
     setIsEditDialogOpen(true);
+  }
+
+  function openDeleteDialog(section: any): void {
+    setSectionToDelete(section);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteSection(): Promise<void> {
+    if (!sectionToDelete) return;
+
+    try {
+      const response = await fetch("/api/sections", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: sectionToDelete.id }),
+      });
+
+      if (response.ok) {
+        await refetchData();
+        toast.success("Section deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(
+          `Failed to delete section: ${error.error || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting section:", error);
+      toast.error("Failed to delete section");
+    }
   }
 
   return (
@@ -193,7 +232,12 @@ export default function Page() {
       </div>
       <div className="rounded-lg border bg-card shadow-sm p-4">
         <DataTable
-          columns={createSectionColumns(refetchData, openEditDialog, router)}
+          columns={createSectionColumns(
+            refetchData,
+            openEditDialog,
+            openDeleteDialog,
+            router
+          )}
           data={sections}
           searchColumn="section_name"
           manualPagination={true}
@@ -378,6 +422,16 @@ export default function Page() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Section"
+        description={`Are you sure you want to delete the section "${sectionToDelete?.section_name}"? This action cannot be undone.`}
+        onConfirm={handleDeleteSection}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

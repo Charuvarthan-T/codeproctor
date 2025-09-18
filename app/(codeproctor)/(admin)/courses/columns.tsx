@@ -3,18 +3,20 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 
 export const createCourseColumns = (
   refetchData: () => Promise<void>,
-  openEditDialog: (course: course) => void
+  openEditDialog: (course: course) => void,
+  onDeleteCourse: (course: course) => void
 ): ColumnDef<course>[] => [
   {
     id: "select",
@@ -71,23 +73,7 @@ export const createCourseColumns = (
     enableHiding: false,
     cell: ({ row }) => {
       const handleDeleteCourse = async () => {
-        if (confirm(`Are you sure you want to delete the course \"${row.original.name}\"?`)) {
-          try {
-            const response = await fetch(`/api/courses?id=${row.original.id}`, {
-              method: "DELETE",
-            });
-
-            if (response.ok) {
-              await refetchData();
-            } else {
-              const error = await response.json();
-              alert(`Failed to delete course: ${error.error || "Unknown error"}`);
-            }
-          } catch (error) {
-            console.error("Error deleting course:", error);
-            alert("Failed to delete course");
-          }
-        }
+        onDeleteCourse(row.original);
       };
 
       const handleEditCourse = () => {

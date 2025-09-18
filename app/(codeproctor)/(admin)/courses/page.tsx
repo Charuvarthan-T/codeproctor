@@ -4,10 +4,20 @@ import { createCourseColumns } from "./columns";
 import { course } from "@/types/types";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function CoursesPage() {
   const [data, setData] = useState<course[]>([]);
@@ -26,6 +36,8 @@ export default function CoursesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editCourse, setEditCourse] = useState<course | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<course | null>(null);
 
   useEffect(() => {
     getData();
@@ -36,7 +48,7 @@ export default function CoursesPage() {
     try {
       const sortBy = sorting.length > 0 ? sorting[0].id : "id";
       const sortOrder = sorting.length > 0 && sorting[0].desc ? "desc" : "asc";
-      
+
       const params = new URLSearchParams({
         page: (pagination.pageIndex + 1).toString(),
         pageSize: pagination.pageSize.toString(),
@@ -50,7 +62,7 @@ export default function CoursesPage() {
       if (!courses.ok) {
         throw new Error("Failed to fetch courses");
       }
-      
+
       const res = await courses.json();
       setData(res.data);
       setTotalRows(res.total);
@@ -70,7 +82,7 @@ export default function CoursesPage() {
 
   async function handleCreateCourse(): Promise<void> {
     if (!newCourseName.trim()) {
-      alert("Please enter a course name");
+      toast.error("Please enter a course name");
       return;
     }
 
@@ -88,13 +100,16 @@ export default function CoursesPage() {
         setIsCreateDialogOpen(false);
         setNewCourseName("");
         await refetchData();
+        toast.success("Course created successfully");
       } else {
         const error = await response.json();
-        alert(`Failed to create course: ${error.error || "Unknown error"}`);
+        toast.error(
+          `Failed to create course: ${error.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error creating course:", error);
-      alert("Failed to create course");
+      toast.error("Failed to create course");
     } finally {
       setCreateLoading(false);
     }
@@ -102,7 +117,7 @@ export default function CoursesPage() {
 
   async function handleEditCourse(): Promise<void> {
     if (!editCourse?.name.trim()) {
-      alert("Please enter a course name");
+      toast.error("Please enter a course name");
       return;
     }
 
@@ -123,13 +138,16 @@ export default function CoursesPage() {
         setIsEditDialogOpen(false);
         setEditCourse(null);
         await refetchData();
+        toast.success("Course updated successfully");
       } else {
         const error = await response.json();
-        alert(`Failed to update course: ${error.error || "Unknown error"}`);
+        toast.error(
+          `Failed to update course: ${error.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error updating course:", error);
-      alert("Failed to update course");
+      toast.error("Failed to update course");
     } finally {
       setEditLoading(false);
     }
@@ -138,6 +156,34 @@ export default function CoursesPage() {
   function openEditDialog(course: course): void {
     setEditCourse({ ...course });
     setIsEditDialogOpen(true);
+  }
+
+  function openDeleteDialog(course: course): void {
+    setCourseToDelete(course);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function handleDeleteCourse(): Promise<void> {
+    if (!courseToDelete) return;
+
+    try {
+      const response = await fetch(`/api/courses?id=${courseToDelete.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        await refetchData();
+        toast.success("Course deleted successfully");
+      } else {
+        const error = await response.json();
+        toast.error(
+          `Failed to delete course: ${error.error || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      toast.error("Failed to delete course");
+    }
   }
 
   return (
@@ -198,7 +244,11 @@ export default function CoursesPage() {
       </div>
       <div className="rounded-lg border bg-card shadow-sm">
         <DataTable
-          columns={createCourseColumns(refetchData, openEditDialog)}
+          columns={createCourseColumns(
+            refetchData,
+            openEditDialog,
+            openDeleteDialog
+          )}
           data={data}
           searchColumn="name"
           manualPagination={true}
@@ -235,7 +285,7 @@ export default function CoursesPage() {
                 id="edit-name"
                 value={editCourse?.name || ""}
                 onChange={(e) =>
-                  setEditCourse(prev =>
+                  setEditCourse((prev) =>
                     prev ? { ...prev, name: e.target.value } : null
                   )
                 }
@@ -265,6 +315,16 @@ export default function CoursesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Course"
+        description={`Are you sure you want to delete the course "${courseToDelete?.name}"? This action cannot be undone.`}
+        onConfirm={handleDeleteCourse}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

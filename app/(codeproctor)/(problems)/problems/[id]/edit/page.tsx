@@ -28,6 +28,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { useCallback, useEffect, useState } from "react";
 
 export interface Tag {
@@ -69,6 +71,8 @@ export default function EditProblemPage() {
   const [isCreatingTestcase, setIsCreatingTestcase] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [testcaseToDelete, setTestcaseToDelete] = useState<string | null>(null);
 
   const { id } = useParams();
   const router = useRouter();
@@ -158,12 +162,12 @@ export default function EditProblemPage() {
 
   async function handleUpdateProblem() {
     if (!title.trim()) {
-      alert("Please enter a problem title");
+      toast.error("Please enter a problem title");
       return;
     }
 
     if (!description.trim()) {
-      alert("Please enter a problem description");
+      toast.error("Please enter a problem description");
       return;
     }
 
@@ -200,12 +204,12 @@ export default function EditProblemPage() {
         );
       }
 
-      alert("Problem updated successfully!");
+      toast.success("Problem updated successfully!");
       await fetchProblem();
       await fetchProblemTags();
     } catch (error) {
       console.error("Error updating problem:", error);
-      alert(
+      toast.error(
         `Failed to update problem: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
@@ -253,7 +257,7 @@ export default function EditProblemPage() {
       !testcaseInput.trim() ||
       !testcaseOutput.trim()
     ) {
-      alert("Please fill in all testcase fields");
+      toast.error("Please fill in all testcase fields");
       return;
     }
 
@@ -278,25 +282,28 @@ export default function EditProblemPage() {
         throw new Error("Failed to create test case");
       }
 
-      alert("Test case created successfully!");
+      toast.success("Test case created successfully!");
       setIsDialogOpen(false);
       resetTestcaseForm();
       fetchTestCases();
     } catch (error) {
       console.error("Error creating test case:", error);
-      alert("Failed to create test case");
+      toast.error("Failed to create test case");
     } finally {
       setIsCreatingTestcase(false);
     }
   }
 
   async function handleDeleteTestcase(testcaseId: string) {
-    if (!confirm("Are you sure you want to delete this test case?")) {
-      return;
-    }
+    setTestcaseToDelete(testcaseId);
+    setIsDeleteDialogOpen(true);
+  }
+
+  async function confirmDeleteTestcase() {
+    if (!testcaseToDelete) return;
 
     try {
-      const res = await fetch(`/api/testcases/${testcaseId}`, {
+      const res = await fetch(`/api/testcases/${testcaseToDelete}`, {
         method: "DELETE",
       });
 
@@ -304,11 +311,11 @@ export default function EditProblemPage() {
         throw new Error("Failed to delete test case");
       }
 
-      alert("Test case deleted successfully!");
+      toast.success("Test case deleted successfully!");
       fetchTestCases();
     } catch (error) {
       console.error("Error deleting test case:", error);
-      alert("Failed to delete test case");
+      toast.error("Failed to delete test case");
     }
   }
 
@@ -537,6 +544,16 @@ export default function EditProblemPage() {
           </CardContent>
         </Card>
       </div>
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Test Case"
+        description="Are you sure you want to delete this test case? This action cannot be undone."
+        onConfirm={confirmDeleteTestcase}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

@@ -3,18 +3,20 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 
 export const createDepartmentColumns = (
   refetchData: () => Promise<void>,
-  openEditDialog: (department: department) => void
+  openEditDialog: (department: department) => void,
+  onDeleteDepartment: (department: department) => void
 ): ColumnDef<department>[] => [
   {
     id: "select",
@@ -71,23 +73,7 @@ export const createDepartmentColumns = (
     enableHiding: false,
     cell: ({ row }) => {
       const handleDeleteDepartment = async () => {
-        if (confirm(`Are you sure you want to delete the department "${row.original.name}"?`)) {
-          try {
-            const response = await fetch(`/api/departments?id=${row.original.id}`, {
-              method: "DELETE",
-            });
-
-            if (response.ok) {
-              await refetchData();
-            } else {
-              const error = await response.json();
-              alert(`Failed to delete department: ${error.error || "Unknown error"}`);
-            }
-          } catch (error) {
-            console.error("Error deleting department:", error);
-            alert("Failed to delete department");
-          }
-        }
+        onDeleteDepartment(row.original);
       };
 
       const handleEditDepartment = () => {

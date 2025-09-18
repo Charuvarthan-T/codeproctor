@@ -30,6 +30,7 @@ import { Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export interface Tag {
   id: string;
@@ -69,14 +70,14 @@ export default function Page() {
   const [isCreatingTestcase, setIsCreatingTestcase] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const {data: session} = useSession();
+  const { data: session } = useSession();
 
-  if(!session?.user){
-    return <h1>Please login first</h1>
+  if (!session?.user) {
+    return <h1>Please login first</h1>;
   }
 
-  if(session.user.role !== "admin" && session.user.role !== "faculty"){
-    return <h1>Access Denied</h1>
+  if (session.user.role !== "admin" && session.user.role !== "faculty") {
+    return <h1>Access Denied</h1>;
   }
 
   useEffect(() => {
@@ -132,12 +133,12 @@ export default function Page() {
 
   async function handleCreateProblem() {
     if (!title.trim()) {
-      alert("Please enter a problem title");
+      toast.error("Please enter a problem title");
       return;
     }
 
     if (!description.trim()) {
-      alert("Please enter a problem description");
+      toast.error("Please enter a problem description");
       return;
     }
 
@@ -176,10 +177,10 @@ export default function Page() {
         await assignTagToProblem(newProblemId);
       }
 
-      alert("Problem created successfully!");
+      toast.success("Problem created successfully!");
     } catch (error) {
       console.error("Error creating problem:", error);
-      alert(
+      toast.error(
         `Failed to create problem: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
@@ -214,7 +215,7 @@ export default function Page() {
       !testcaseInput.trim() ||
       !testcaseOutput.trim()
     ) {
-      alert("Please fill in all testcase fields");
+      toast.error("Please fill in all testcase fields");
       return;
     }
 
@@ -239,13 +240,13 @@ export default function Page() {
         throw new Error("Failed to create test case");
       }
 
-      alert("Test case created successfully!");
+      toast.success("Test case created successfully!");
       setIsDialogOpen(false);
       resetTestcaseForm();
       getTestCases();
     } catch (error) {
       console.error("Error creating test case:", error);
-      alert("Failed to create test case");
+      toast.error("Failed to create test case");
     } finally {
       setIsCreatingTestcase(false);
     }
