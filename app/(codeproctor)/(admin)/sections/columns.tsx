@@ -121,7 +121,7 @@ export const createSectionColumns = (
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
-                  router.push("/sections/" + row.original.id + "/assign");
+                  router.push("/sections/" + row.original.id);
                 }}
               >
                 Assign User
