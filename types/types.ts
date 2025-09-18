@@ -57,4 +57,14 @@ export type problem = {
   title: string;
   description: string;
   created_by?: string;
+  // Function signatures for different languages (LeetCode-style)
+  function_signatures?: {
+    javascript?: string;
+    python?: string;
+    java?: string;
+    cpp?: string;
+    c?: string;
+  };
+  // Template type for common problem patterns
+  template_type?: string;
 };
