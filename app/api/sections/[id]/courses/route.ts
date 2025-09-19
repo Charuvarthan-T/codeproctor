@@ -1,7 +1,7 @@
 import { getCoursesForSection } from "@/repository/section.repository";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = await params;
   // Fetch courses for the given section ID from your database or service
   const courses = await getCoursesForSection(id);
 
@@ -11,5 +11,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const { id } = await params;
 
 }

@@ -197,17 +197,97 @@ export async function deleteSection(id: string){
 
 export async function getCoursesForSection(sectionid: string) {
   try {
-    const courses = await sql`
-      SELECT * FROM courses
-      WHERE id IN (
-        SELECT course_id FROM semesters_courses
-        WHERE sem_id = (
-          SELECT semesterid FROM sections
-          WHERE id = ${sectionid}
-        )
-      )
+    const assignments = await sql`
+      SELECT 
+        c.id as course_id,
+        c.name as course_name,
+        u.id as faculty_id,
+        u.name as faculty_name,
+        u.email as faculty_email
+      FROM faculty_courses_section fcs
+      JOIN courses c ON fcs.courseid = c.id
+      JOIN users u ON fcs.userid = u.id
+      WHERE fcs.sectionid = ${sectionid}
+      ORDER BY c.name, u.name
     `;
-    return { status: true, data: courses };
+    return { status: true, data: assignments };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}
+
+// Get available faculty for a specific course-section combination
+export async function getAvailableFaculty(courseid: string, sectionid: string) {
+  try {
+    // Debug: Get all faculty users first
+    const allFaculty = await sql`
+      SELECT u.id, u.name, u.email, u.role
+      FROM users u
+      WHERE u.role = 'faculty'
+      ORDER BY u.name
+    `;
+    
+    // Debug: Get already assigned faculty for this course-section
+    const assignedFaculty = await sql`
+      SELECT fcs.userid, u.name, u.email
+      FROM faculty_courses_section fcs
+      JOIN users u ON fcs.userid = u.id
+      WHERE fcs.courseid = ${courseid}
+        AND fcs.sectionid = ${sectionid}
+    `;
+    
+    console.log(`Debug - Total faculty in database: ${allFaculty.length}`);
+    console.log(`Debug - Already assigned to course ${courseid} in section ${sectionid}: ${assignedFaculty.length}`);
+    console.log('Debug - All faculty:', allFaculty.map(f => ({ id: f.id, name: f.name, role: f.role })));
+    console.log('Debug - Assigned faculty:', assignedFaculty.map(f => ({ id: f.userid, name: f.name })));
+    
+    // Get available faculty (original query)
+    const faculty = await sql`
+      SELECT u.id, u.name, u.email
+      FROM users u
+      WHERE u.role = 'faculty'
+        AND u.id NOT IN (
+          SELECT fcs.userid
+          FROM faculty_courses_section fcs
+          WHERE fcs.courseid = ${courseid}
+            AND fcs.sectionid = ${sectionid}
+        )
+      ORDER BY u.name
+    `;
+    
+    console.log(`Debug - Available faculty: ${faculty.length}`);
+    console.log('Debug - Available faculty list:', faculty.map(f => ({ id: f.id, name: f.name })));
+    
+    return { status: true, data: faculty };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}
+
+// Assign faculty to a course-section combination
+export async function assignFacultyToCourse(courseid: string, sectionid: string, userid: string) {
+  try {
+    await sql`
+      INSERT INTO faculty_courses_section (courseid, sectionid, userid)
+      VALUES (${courseid}, ${sectionid}, ${userid})
+    `;
+    return { status: true };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}
+
+// Remove faculty assignment from a course-section combination
+export async function removeFacultyFromCourse(courseid: string, sectionid: string, userid: string) {
+  try {
+    await sql`
+      DELETE FROM faculty_courses_section 
+      WHERE courseid = ${courseid} AND sectionid = ${sectionid} AND userid = ${userid}
+    `;
+    return { status: true };
   } catch (e) {
     console.log(e);
     return { status: false, error: e };
