@@ -34,4 +34,12 @@ export const myCourseColumns: ColumnDef<course>[] = [
       );
     },
   },
+  {
+    accessorKey: "section_name",
+    header: "Section",
+  },
+  {
+    accessorKey: "semester_name",
+    header: "Semester",
+  }
 ];

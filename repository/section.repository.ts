@@ -197,20 +197,33 @@ export async function deleteSection(id: string){
 
 export async function getCoursesForSection(sectionid: string) {
   try {
-    const assignments = await sql`
+    const data = await sql`
       SELECT 
         c.id as course_id,
-        c.name as course_name,
-        u.id as faculty_id,
-        u.name as faculty_name,
-        u.email as faculty_email
-      FROM faculty_courses_section fcs
-      JOIN courses c ON fcs.courseid = c.id
-      JOIN users u ON fcs.userid = u.id
-      WHERE fcs.sectionid = ${sectionid}
-      ORDER BY c.name, u.name
+        c.name as course_name
+      FROM sections s
+      JOIN semesters sem ON s.semesterid = sem.id
+      JOIN semesters_courses sc ON sem.id = sc.sem_id
+      JOIN courses c ON sc.course_id = c.id
+      WHERE s.id = ${sectionid}
+      ORDER BY c.name
     `;
-    return { status: true, data: assignments };
+    return { status: true, data: data };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}
+
+export async function getAssignedFacultyForACourse(courseid: string, sectionid: string) {
+  try {
+    const faculty = await sql`
+      SELECT u.id, u.name, u.email
+      FROM users u
+      JOIN faculty_courses_section fcs ON u.id = fcs.userid
+      WHERE fcs.courseid = ${courseid} AND fcs.sectionid = ${sectionid}
+    `;
+    return { status: true, data: faculty };
   } catch (e) {
     console.log(e);
     return { status: false, error: e };

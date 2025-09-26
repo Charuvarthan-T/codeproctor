@@ -87,9 +87,11 @@ export async function assignRoleToUser(userId: string, role: string) {
 export async function getMyCoursesForFaculty(facultyId: string) {
   try{
     const courses = await sql`
-      SELECT DISTINCT c.id, c.name
+      SELECT c.id, c.name, s.name as section_name, sm.name as semester_name
       FROM faculty_courses_section fcs
       JOIN courses c ON fcs.courseid = c.id
+      JOIN sections s ON fcs.sectionid = s.id
+      JOIN semesters sm ON s.semesterid = sm.id
       WHERE fcs.userid = ${facultyId}
       ORDER BY c.name ASC`;
     return courses;

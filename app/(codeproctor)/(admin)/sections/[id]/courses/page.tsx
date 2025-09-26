@@ -28,12 +28,9 @@ import { BookOpen, ArrowLeft, Plus, X, Users } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
-interface CourseAssignment {
+interface Course {
   course_id: string;
   course_name: string;
-  faculty_id: string;
-  faculty_name: string;
-  faculty_email: string;
 }
 
 interface Faculty {
@@ -42,9 +39,15 @@ interface Faculty {
   email: string;
 }
 
+interface CourseWithFaculty {
+  course_id: string;
+  course_name: string;
+  faculty: Faculty[];
+}
+
 interface ApiResponse {
   status: boolean;
-  data: CourseAssignment[];
+  data: Course[];
   error?: any;
 }
 
@@ -55,7 +58,7 @@ interface FacultyResponse {
 }
 
 export default function SectionCoursesPage() {
-  const [assignments, setAssignments] = useState<CourseAssignment[]>([]);
+  const [coursesWithFaculty, setCoursesWithFaculty] = useState<CourseWithFaculty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableFaculty, setAvailableFaculty] = useState<Faculty[]>([]);
@@ -72,28 +75,52 @@ export default function SectionCoursesPage() {
   const [deleteCourseId, setDeleteCourseId] = useState<string>("");
   const [facultyName, setFacultyName] = useState<string>("");
 
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/sections/${sectionId}/courses`);
-        const data: ApiResponse = await response.json();
+  const fetchCoursesWithFaculty = async () => {
+    try {
+      setLoading(true);
+      
+      const coursesResponse = await fetch(`/api/sections/${sectionId}/courses`);
+      const coursesData: ApiResponse = await coursesResponse.json();
 
-        if (data.status && data.data) {
-          setAssignments(data.data);
-        } else {
-          setError(data.error || "Failed to fetch assignments");
-        }
-      } catch (err) {
-        setError("An error occurred while fetching assignments");
-        console.error("Error fetching assignments:", err);
-      } finally {
-        setLoading(false);
+      if (!coursesData.status || !coursesData.data) {
+        setError(coursesData.error || "Failed to fetch courses");
+        return;
       }
-    };
 
+      const coursesWithFacultyPromises = coursesData.data.map(async (course) => {
+        try {
+          const facultyResponse = await fetch(`/api/sections/${sectionId}/courses/${course.course_id}/assigned`);
+          const facultyData: FacultyResponse = await facultyResponse.json();
+          
+          return {
+            course_id: course.course_id,
+            course_name: course.course_name,
+            faculty: facultyData.status ? facultyData.data : []
+          };
+        } catch (err) {
+          console.error(`Error fetching faculty for course ${course.course_id}:`, err);
+          return {
+            course_id: course.course_id,
+            course_name: course.course_name,
+            faculty: []
+          };
+        }
+      });
+
+      const coursesWithFacultyData = await Promise.all(coursesWithFacultyPromises);
+      setCoursesWithFaculty(coursesWithFacultyData);
+      
+    } catch (err) {
+      setError("An error occurred while fetching courses");
+      console.error("Error fetching courses:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (sectionId) {
-      fetchAssignments();
+      fetchCoursesWithFaculty();
     }
   }, [sectionId]);
 
@@ -144,12 +171,8 @@ export default function SectionCoursesPage() {
       if (data.status) {
         toast.success("Faculty assigned successfully");
         setIsAssignDialogOpen(false);
-        // Refresh the assignments
-        const refreshResponse = await fetch(`/api/sections/${sectionId}/courses`);
-        const refreshData: ApiResponse = await refreshResponse.json();
-        if (refreshData.status && refreshData.data) {
-          setAssignments(refreshData.data);
-        }
+        // Refresh the courses with faculty
+        await fetchCoursesWithFaculty();
       } else {
         toast.error(data.error || "Failed to assign faculty");
       }
@@ -171,12 +194,8 @@ export default function SectionCoursesPage() {
 
       if (data.status) {
         toast.success("Faculty removed successfully");
-        // Refresh the assignments
-        const refreshResponse = await fetch(`/api/sections/${sectionId}/courses`);
-        const refreshData: ApiResponse = await refreshResponse.json();
-        if (refreshData.status && refreshData.data) {
-          setAssignments(refreshData.data);
-        }
+        // Refresh the courses with faculty
+        await fetchCoursesWithFaculty();
       } else {
         toast.error(data.error || "Failed to remove faculty");
       }
@@ -193,29 +212,17 @@ export default function SectionCoursesPage() {
     setFacultyName(facultyName);
   };
 
-  // Group assignments by course
-  const courseGroups = assignments.reduce((groups, assignment) => {
-    if (!groups[assignment.course_id]) {
-      groups[assignment.course_id] = {
-        course_name: assignment.course_name,
-        faculty: [],
-      };
-    }
-    groups[assignment.course_id].faculty.push({
-      faculty_id: assignment.faculty_id,
-      faculty_name: assignment.faculty_name,
-      faculty_email: assignment.faculty_email,
-    });
+  const courseGroups = coursesWithFaculty.reduce((groups, course) => {
+    groups[course.course_id] = {
+      course_name: course.course_name,
+      faculty: course.faculty.map(f => ({
+        faculty_id: f.id,
+        faculty_name: f.name,
+        faculty_email: f.email,
+      }))
+    };
     return groups;
   }, {} as Record<string, { course_name: string; faculty: Array<{ faculty_id: string; faculty_name: string; faculty_email: string }> }>);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto">
@@ -225,7 +232,7 @@ export default function SectionCoursesPage() {
             Section Courses
           </h1>
           <p className="text-sm text-muted-foreground">
-            Section A - 2021-Semester-4-Mechanical Engineering - Mechanical Engineering
+            Manage courses and their assigned faculty for this section.
           </p>
         </div>
       </div>
@@ -233,16 +240,16 @@ export default function SectionCoursesPage() {
       <div className="mb-4">
         <h2 className="text-xl font-semibold mb-2">Assigned Courses</h2>
         <p className="text-sm text-muted-foreground">
-          {Object.keys(courseGroups).length} courses from the semester curriculum
+          {coursesWithFaculty.length} courses from the semester curriculum
         </p>
       </div>
 
-      {Object.keys(courseGroups).length === 0 ? (
+      {coursesWithFaculty.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-2">
-                No faculty assignments
+                No faculty courses
               </h3>
               <p className="text-muted-foreground mb-4">
                 No faculty members are assigned to courses in this section yet.
