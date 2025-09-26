@@ -57,6 +57,8 @@ export type problem = {
   title: string;
   description: string;
   created_by?: string;
+  total_marks?: number;
+  created_at?: string;
   // Function signatures for different languages (LeetCode-style)
   function_signatures?: {
     javascript?: string;
