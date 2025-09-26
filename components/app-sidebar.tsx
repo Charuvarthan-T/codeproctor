@@ -77,6 +77,12 @@ const sidebarItems: SidebarItem[] = [
     icon: Code,
     role: ["admin", "faculty", "student"],
   },
+  {
+    label: "My Courses",
+    href: "/my-courses",
+    icon: BookOpen,
+    role: ["faculty","student","admin"],
+  }
 ];
 
 export default function AppSidebar() {

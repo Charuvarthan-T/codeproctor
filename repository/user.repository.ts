@@ -83,3 +83,18 @@ export async function assignRoleToUser(userId: string, role: string) {
     throw error;
   }
 }
+
+export async function getMyCoursesForFaculty(facultyId: string) {
+  try{
+    const courses = await sql`
+      SELECT DISTINCT c.id, c.name
+      FROM faculty_courses_section fcs
+      JOIN courses c ON fcs.courseid = c.id
+      WHERE fcs.userid = ${facultyId}
+      ORDER BY c.name ASC`;
+    return courses;
+  } catch (error) {
+    console.error("Error getting my courses for faculty:", error);
+    throw error;
+  }
+}

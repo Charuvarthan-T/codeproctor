@@ -26,6 +26,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, ArrowLeft, Plus, X, Users } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface CourseAssignment {
   course_id: string;
@@ -66,6 +67,10 @@ export default function SectionCoursesPage() {
   const params = useParams();
   const router = useRouter();
   const sectionId = params.id as string;
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteFacultyId, setDeleteFacultyId] = useState<string>("");
+  const [deleteCourseId, setDeleteCourseId] = useState<string>("");
+  const [facultyName, setFacultyName] = useState<string>("");
 
   useEffect(() => {
     const fetchAssignments = async () => {
@@ -73,7 +78,7 @@ export default function SectionCoursesPage() {
         setLoading(true);
         const response = await fetch(`/api/sections/${sectionId}/courses`);
         const data: ApiResponse = await response.json();
-        
+
         if (data.status && data.data) {
           setAssignments(data.data);
         } else {
@@ -96,7 +101,7 @@ export default function SectionCoursesPage() {
     try {
       const response = await fetch(`/api/sections/${sectionId}/courses/${courseId}/faculty`);
       const data: FacultyResponse = await response.json();
-      
+
       if (data.status && data.data) {
         setAvailableFaculty(data.data);
       } else {
@@ -133,9 +138,9 @@ export default function SectionCoursesPage() {
         },
         body: JSON.stringify({ facultyId: selectedFacultyId }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.status) {
         toast.success("Faculty assigned successfully");
         setIsAssignDialogOpen(false);
@@ -156,18 +161,14 @@ export default function SectionCoursesPage() {
     }
   };
 
-  const handleRemoveFaculty = async (courseId: string, facultyId: string, facultyName: string) => {
-    if (!confirm(`Are you sure you want to remove ${facultyName} from this course?`)) {
-      return;
-    }
-
+  const confirmRemoveFaculty = async (courseId: string, facultyId: string) => {
     try {
       const response = await fetch(`/api/sections/${sectionId}/courses/${courseId}/faculty?facultyId=${facultyId}`, {
         method: "DELETE",
       });
-      
+
       const data = await response.json();
-      
+
       if (data.status) {
         toast.success("Faculty removed successfully");
         // Refresh the assignments
@@ -183,6 +184,13 @@ export default function SectionCoursesPage() {
       toast.error("An error occurred while removing faculty");
       console.error("Error removing faculty:", err);
     }
+  };
+
+  const handleRemoveFaculty = async (courseId: string, facultyId: string, facultyName: string) => {
+    setDeleteDialogOpen(true);
+    setDeleteCourseId(courseId);
+    setDeleteFacultyId(facultyId);
+    setFacultyName(facultyName);
   };
 
   // Group assignments by course
@@ -210,12 +218,8 @@ export default function SectionCoursesPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto">
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Section Courses
@@ -269,8 +273,8 @@ export default function SectionCoursesPage() {
                       <Users className="h-3 w-3 mr-1" />
                       {courseData.faculty.length}
                     </Badge>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="h-7 px-2 text-xs"
                       onClick={() => handleAssignFaculty(courseId, courseData.course_name)}
@@ -290,8 +294,8 @@ export default function SectionCoursesPage() {
                       </div>
                       <div className="h-[calc(100%-20px)] overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                         {courseData.faculty.map((faculty) => (
-                          <div 
-                            key={faculty.faculty_id} 
+                          <div
+                            key={faculty.faculty_id}
                             className="flex items-center justify-between bg-muted/30 p-2 rounded text-xs border"
                           >
                             <div className="flex-1 min-w-0">
@@ -329,6 +333,17 @@ export default function SectionCoursesPage() {
         </div>
       )}
 
+      <ConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Confirm Removal"
+        description={`Are you sure you want to remove ${facultyName} from this course?`}
+        onConfirm={async () => {
+          setDeleteDialogOpen(false);
+          await confirmRemoveFaculty(deleteCourseId, deleteFacultyId);
+        }}
+      />
+
       {/* Assign Faculty Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -338,7 +353,7 @@ export default function SectionCoursesPage() {
               Select a faculty member to assign to <strong>{selectedCourseName}</strong>.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             {availableFaculty.length > 0 ? (
               <Select value={selectedFacultyId} onValueChange={setSelectedFacultyId}>
@@ -350,7 +365,6 @@ export default function SectionCoursesPage() {
                     <SelectItem key={faculty.id} value={faculty.id}>
                       <div className="flex flex-col items-start">
                         <span className="font-medium">{faculty.name}</span>
-                        <span className="text-sm text-muted-foreground">{faculty.email}</span>
                       </div>
                     </SelectItem>
                   ))}

@@ -220,33 +220,11 @@ export async function getCoursesForSection(sectionid: string) {
 // Get available faculty for a specific course-section combination
 export async function getAvailableFaculty(courseid: string, sectionid: string) {
   try {
-    // Debug: Get all faculty users first
-    const allFaculty = await sql`
-      SELECT u.id, u.name, u.email, u.role
-      FROM users u
-      WHERE u.role = 'faculty'
-      ORDER BY u.name
-    `;
-    
-    // Debug: Get already assigned faculty for this course-section
-    const assignedFaculty = await sql`
-      SELECT fcs.userid, u.name, u.email
-      FROM faculty_courses_section fcs
-      JOIN users u ON fcs.userid = u.id
-      WHERE fcs.courseid = ${courseid}
-        AND fcs.sectionid = ${sectionid}
-    `;
-    
-    console.log(`Debug - Total faculty in database: ${allFaculty.length}`);
-    console.log(`Debug - Already assigned to course ${courseid} in section ${sectionid}: ${assignedFaculty.length}`);
-    console.log('Debug - All faculty:', allFaculty.map(f => ({ id: f.id, name: f.name, role: f.role })));
-    console.log('Debug - Assigned faculty:', assignedFaculty.map(f => ({ id: f.userid, name: f.name })));
-    
-    // Get available faculty (original query)
+      
     const faculty = await sql`
       SELECT u.id, u.name, u.email
       FROM users u
-      WHERE u.role = 'faculty'
+      WHERE u.role = 'faculty' OR u.role = 'admin'
         AND u.id NOT IN (
           SELECT fcs.userid
           FROM faculty_courses_section fcs
@@ -255,9 +233,6 @@ export async function getAvailableFaculty(courseid: string, sectionid: string) {
         )
       ORDER BY u.name
     `;
-    
-    console.log(`Debug - Available faculty: ${faculty.length}`);
-    console.log('Debug - Available faculty list:', faculty.map(f => ({ id: f.id, name: f.name })));
     
     return { status: true, data: faculty };
   } catch (e) {
