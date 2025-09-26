@@ -6,20 +6,15 @@ export async function GET(
     request: NextRequest,
     { params }: { params: { id: string } }
 ) {
-    // get user id and role from server session
     const user = await requireAuth();
     
-    // If requireAuth returns a NextResponse (error), return it
     if ('status' in user) {
         return user;
     }
     
-    const { id: targetUserId } = params;
+    const { id: targetUserId } = await params;
     
-    // Authorization logic:
-    // - Admins can view courses for any user
-    // - Faculty can only view their own courses
-    // - Students cannot access this endpoint
+
     if (user.role === "admin") {
         const courses = await getMyCoursesForFaculty(targetUserId);
         return new Response(JSON.stringify({ courses }), {
