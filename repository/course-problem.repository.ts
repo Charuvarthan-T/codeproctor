@@ -65,13 +65,23 @@ export async function unassignProblemFromCourse(problemId: string, courseId: str
 
 export async function getCourseProblems(courseId: string) {
   try {
+    // Get both assigned general problems and course-specific problems
     const problems = await sql`
-      SELECT p.id, p.title, p.description, p.created_at, p.total_marks, u.name AS created_by
-      FROM problems p 
-      INNER JOIN problems_courses pc ON p.id = pc.problemid
-      INNER JOIN users u ON p.created_by = u.id
-      WHERE pc.courseid = ${courseId}
-      ORDER BY p.created_at DESC
+      (
+        SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, 'assigned' as type
+        FROM problems p 
+        INNER JOIN problems_courses pc ON p.id = pc.problemid
+        INNER JOIN users u ON p.created_by = u.id
+        WHERE pc.courseid = ${courseId} AND p.course IS NULL
+      )
+      UNION ALL
+      (
+        SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, 'course-specific' as type
+        FROM problems p 
+        INNER JOIN users u ON p.created_by = u.id
+        WHERE p.course = ${courseId}
+      )
+      ORDER BY created_at DESC
     `;
     return {
       success: true,
@@ -90,10 +100,10 @@ export async function getCourseProblems(courseId: string) {
 export async function getUnassignedProblems(courseId: string) {
   try {
     const problems = await sql`
-      SELECT p.id, p.title, p.description, p.created_at, p.total_marks, u.name AS created_by
+      SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by
       FROM problems p 
       INNER JOIN users u ON p.created_by = u.id
-      WHERE p.id NOT IN (
+      WHERE p.course IS NULL AND p.id NOT IN (
         SELECT problemid FROM problems_courses WHERE courseid = ${courseId}
       )
       ORDER BY p.created_at DESC

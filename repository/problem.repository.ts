@@ -10,11 +10,13 @@ export interface createProblem {
   title: string;
   description: string;
   created_by: string;
+  course?: string; // Optional course ID for course-specific problems
 }
 
 export async function getAllProblems() {
   try {
-    const problems = await sql`SELECT * FROM problems`;
+    // Only return general problems (course is NULL)
+    const problems = await sql`SELECT * FROM problems WHERE course IS NULL`;
     return problems;
   } catch (error) {
     console.error("Error getting all problems:", error);
@@ -46,26 +48,27 @@ export async function getProblemsWithPagination(
         SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, up.is_completed
         FROM problems p INNER JOIN users u ON p.created_by = u.id
         LEFT JOIN problems_users up ON p.id = up.problemid AND up.userid = ${userId}
-        WHERE p.title ILIKE ${searchPattern} OR p.description ILIKE ${searchPattern} OR p.id::text ILIKE ${searchPattern} OR up.is_completed::text ILIKE ${searchPattern}
+        WHERE p.course IS NULL AND (p.title ILIKE ${searchPattern} OR p.description ILIKE ${searchPattern} OR p.id::text ILIKE ${searchPattern} OR up.is_completed::text ILIKE ${searchPattern})
         ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
       totalResult = await sql`
         SELECT COUNT(*) as count FROM problems p
-        WHERE p.title ILIKE ${searchPattern} OR p.description ILIKE ${searchPattern} OR p.id::text ILIKE ${searchPattern}
+        WHERE p.course IS NULL AND (p.title ILIKE ${searchPattern} OR p.description ILIKE ${searchPattern} OR p.id::text ILIKE ${searchPattern})
       `;
     } else {
       problems = await sql`
         SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, up.is_completed
         FROM problems p INNER JOIN users u ON p.created_by = u.id
         LEFT JOIN problems_users up ON p.id = up.problemid AND up.userid = ${userId}
+        WHERE p.course IS NULL
         ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
       totalResult = await sql`
-        SELECT COUNT(*) as count FROM problems
+        SELECT COUNT(*) as count FROM problems WHERE course IS NULL
       `;
     }
 
@@ -86,8 +89,11 @@ export async function getProblemsWithPagination(
 
 export async function createProblem(newProblem: createProblem) {
   try {
-    const result =
-      await sql`INSERT INTO problems (id, title, description, created_by) VALUES (${newProblem.problemid},${newProblem.title}, ${newProblem.description}, ${newProblem.created_by}) RETURNING *`;
+    const result = await sql`
+      INSERT INTO problems (id, title, description, created_by, course) 
+      VALUES (${newProblem.problemid}, ${newProblem.title}, ${newProblem.description}, ${newProblem.created_by}, ${newProblem.course || null}) 
+      RETURNING *
+    `;
     return result[0];
   } catch (error) {
     console.error("Error creating problem:", error);
@@ -154,5 +160,55 @@ export async function CheckProblemCompletedUser(
 ) {
   const result = await sql`SELECT is_completed FROM problems_users WHERE userid = ${userId} AND problemid = ${problemId}`;
   return result[0]?.is_completed || "unsolved";
+}
+
+// Get course-specific problems
+export async function getCourseSpecificProblems(courseId: string) {
+  try {
+    const problems = await sql`
+      SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, p.course
+      FROM problems p 
+      INNER JOIN users u ON p.created_by = u.id
+      WHERE p.course = ${courseId}
+      ORDER BY p.created_at DESC
+    `;
+    return problems;
+  } catch (error) {
+    console.error("Error getting course-specific problems:", error);
+    throw error;
+  }
+}
+
+// Create problem with test cases
+export async function createProblemWithTestCases(
+  problemData: createProblem,
+  testCases: { input: string; output: string }[]
+) {
+  try {
+    // Create the problem
+    const problem = await createProblem(problemData);
+    
+    // Create and link test cases
+    for (const testCase of testCases) {
+      const testCaseResult = await sql`
+        INSERT INTO testcases (input, output) 
+        VALUES (${testCase.input}, ${testCase.output}) 
+        RETURNING id
+      `;
+      
+      const testCaseId = testCaseResult[0].id;
+      
+      // Link test case to problem
+      await sql`
+        INSERT INTO problems_testcases (problem_id, testcase_id) 
+        VALUES (${problem.id}, ${testCaseId})
+      `;
+    }
+    
+    return problem;
+  } catch (error) {
+    console.error("Error creating problem with test cases:", error);
+    throw error;
+  }
 }
 

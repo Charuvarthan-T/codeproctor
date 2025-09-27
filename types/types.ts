@@ -57,8 +57,8 @@ export type problem = {
   title: string;
   description: string;
   created_by?: string;
-  total_marks?: number;
   created_at?: string;
+  course?: string; // Course ID for course-specific problems, null for general problems
   // Function signatures for different languages (LeetCode-style)
   function_signatures?: {
     javascript?: string;
@@ -69,4 +69,11 @@ export type problem = {
   };
   // Template type for common problem patterns
   template_type?: string;
+};
+
+export type testCase = {
+  id: string;
+  input: string;
+  output: string;
+  created_at?: string;
 };

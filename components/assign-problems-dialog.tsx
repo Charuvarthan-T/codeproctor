@@ -10,18 +10,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, Minus, Users, BookOpen } from "lucide-react";
+import { Loader2, Plus, Minus, Users, BookOpen, FileText, Trash2 } from "lucide-react";
 
 interface Problem {
   id: string;
   title: string;
   description: string;
   created_at: string;
-  total_marks: number;
   created_by: string;
+  type?: string;
+}
+
+interface TestCase {
+  input: string;
+  output: string;
 }
 
 interface AssignProblemsDialogProps {
@@ -42,7 +50,14 @@ export function AssignProblemsDialog({
   const [selectedProblems, setSelectedProblems] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [activeView, setActiveView] = useState<"unassigned" | "assigned">("unassigned");
+  const [activeView, setActiveView] = useState<"unassigned" | "assigned" | "create">("unassigned");
+  
+  // Create problem form state
+  const [createForm, setCreateForm] = useState({
+    title: "",
+    description: "",
+  });
+  const [testCases, setTestCases] = useState<TestCase[]>([{ input: "", output: "" }]);
 
   const fetchProblems = async () => {
     setLoading(true);
@@ -74,6 +89,9 @@ export function AssignProblemsDialog({
     if (open && courseId) {
       fetchProblems();
       setSelectedProblems([]);
+      // Reset create form when dialog opens
+      setCreateForm({ title: "", description: "" });
+      setTestCases([{ input: "", output: "" }]);
     }
   }, [open, courseId]);
 
@@ -150,6 +168,106 @@ export function AssignProblemsDialog({
     }
   };
 
+  const handleDeleteProblem = async (problemId: string, problemTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the problem "${problemTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/courses/${courseId}/problems`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          problemId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Course-specific problem deleted successfully");
+        await fetchProblems(); // Refresh the lists
+      } else {
+        toast.error(result.error || "Failed to delete problem");
+      }
+    } catch (error) {
+      console.error("Error deleting problem:", error);
+      toast.error("Failed to delete problem");
+    }
+  };
+
+  // Test case management functions
+  const addTestCase = () => {
+    setTestCases([...testCases, { input: "", output: "" }]);
+  };
+
+  const removeTestCase = (index: number) => {
+    if (testCases.length > 1) {
+      setTestCases(testCases.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateTestCase = (index: number, field: 'input' | 'output', value: string) => {
+    const updatedTestCases = testCases.map((testCase, i) => 
+      i === index ? { ...testCase, [field]: value } : testCase
+    );
+    setTestCases(updatedTestCases);
+  };
+
+  // Create course-specific problem
+  const handleCreateProblem = async () => {
+    if (!createForm.title.trim()) {
+      toast.error("Problem title is required");
+      return;
+    }
+    
+    if (!createForm.description.trim()) {
+      toast.error("Problem description is required");
+      return;
+    }
+
+    // Validate test cases
+    const validTestCases = testCases.filter(tc => tc.input.trim() && tc.output.trim());
+    if (validTestCases.length === 0) {
+      toast.error("At least one valid test case is required");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/courses/${courseId}/problems`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: createForm.title,
+          description: createForm.description,
+          testCases: validTestCases,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Course-specific problem created successfully");
+        setCreateForm({ title: "", description: "" });
+        setTestCases([{ input: "", output: "" }]);
+        await fetchProblems(); // Refresh the lists
+        setActiveView("assigned"); // Switch to assigned view to see the new problem
+      } else {
+        toast.error(result.error || "Failed to create problem");
+      }
+    } catch (error) {
+      console.error("Error creating problem:", error);
+      toast.error("Failed to create problem");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const ProblemCard = ({ 
     problem, 
     isAssigned, 
@@ -171,21 +289,33 @@ export function AssignProblemsDialog({
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-semibold truncate">{problem.title}</h4>
           <div className="flex items-center space-x-2 ml-2">
-            {problem.total_marks && (
-              <Badge variant="secondary" className="text-xs">
-                {problem.total_marks} marks
+            {problem.type === 'course-specific' && (
+              <Badge variant="default" className="text-xs">
+                Course-Specific
               </Badge>
             )}
             {isAssigned && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => handleUnassignProblem(problem.id)}
-                className="h-6 w-6 p-0"
-                title="Unassign problem"
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
+              problem.type === 'course-specific' ? (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDeleteProblem(problem.id, problem.title)}
+                  className="h-6 w-6 p-0"
+                  title="Delete course-specific problem"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleUnassignProblem(problem.id)}
+                  className="h-6 w-6 p-0"
+                  title="Unassign problem"
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+              )
             )}
           </div>
         </div>
@@ -206,7 +336,7 @@ export function AssignProblemsDialog({
         <DialogHeader>
           <DialogTitle>Manage Problems for {courseName}</DialogTitle>
           <DialogDescription>
-            Assign or unassign problems to/from this course
+            Assign existing problems or create course-specific problems with test cases
           </DialogDescription>
         </DialogHeader>
 
@@ -221,7 +351,7 @@ export function AssignProblemsDialog({
             }`}
           >
             <BookOpen className="h-4 w-4" />
-            <span>Available Problems ({unassignedProblems.length})</span>
+            <span>Available ({unassignedProblems.length})</span>
           </button>
           <button
             onClick={() => setActiveView("assigned")}
@@ -232,7 +362,18 @@ export function AssignProblemsDialog({
             }`}
           >
             <Users className="h-4 w-4" />
-            <span>Assigned Problems ({assignedProblems.length})</span>
+            <span>Assigned ({assignedProblems.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveView("create")}
+            className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeView === "create"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Create New</span>
           </button>
         </div>
 
@@ -242,6 +383,90 @@ export function AssignProblemsDialog({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin" />
               <span className="ml-2">Loading problems...</span>
+            </div>
+          ) : activeView === "create" ? (
+            <div className="space-y-6 h-96 overflow-y-auto pr-2">
+              {/* Create Problem Form */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Problem Title *</Label>
+                  <Input
+                    id="title"
+                    value={createForm.title}
+                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                    placeholder="Enter problem title"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="description">Problem Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    placeholder="Describe the problem requirements, constraints, and examples"
+                    className="min-h-[100px]"
+                  />
+                </div>
+
+                {/* Test Cases Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>Test Cases *</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addTestCase}
+                      className="h-8"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Test Case
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {testCases.map((testCase, index) => (
+                      <div key={index} className="border rounded-lg p-3 bg-muted/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Test Case {index + 1}</span>
+                          {testCases.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeTestCase(index)}
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Input</Label>
+                            <Textarea
+                              value={testCase.input}
+                              onChange={(e) => updateTestCase(index, 'input', e.target.value)}
+                              placeholder="Test input"
+                              className="h-20 text-xs"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Expected Output</Label>
+                            <Textarea
+                              value={testCase.output}
+                              onChange={(e) => updateTestCase(index, 'output', e.target.value)}
+                              placeholder="Expected output"
+                              className="h-20 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="h-96 overflow-y-auto">
@@ -293,6 +518,9 @@ export function AssignProblemsDialog({
             {activeView === "unassigned" && selectedProblems.length > 0 && (
               <span>{selectedProblems.length} problem(s) selected</span>
             )}
+            {activeView === "create" && (
+              <span>Create a new problem specific to this course</span>
+            )}
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -312,6 +540,24 @@ export function AssignProblemsDialog({
                   <>
                     <Plus className="mr-2 h-4 w-4" />
                     Assign Selected ({selectedProblems.length})
+                  </>
+                )}
+              </Button>
+            )}
+            {activeView === "create" && (
+              <Button
+                onClick={handleCreateProblem}
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Create Problem
                   </>
                 )}
               </Button>
