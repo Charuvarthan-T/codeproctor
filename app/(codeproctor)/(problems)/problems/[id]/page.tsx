@@ -62,10 +62,9 @@ export default function Page() {
     setIsLoading(true);
     setIsRunningTests(true);
 
-    const apiKey = process.env.NEXT_PUBLIC_JUDGE0_API_KEY;
     const apiUrl = process.env.NEXT_PUBLIC_JUDGE0_API_URL;
 
-    if (!apiKey || !apiUrl) {
+    if (!apiUrl) {
       setOutput("❌ API configuration missing. Please check your environment variables.");
       setIsLoading(false);
       setIsRunningTests(false);
@@ -79,8 +78,6 @@ export default function Page() {
         const options = {
           method: "POST",
           headers: {
-            "x-rapidapi-key": apiKey,
-            "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -113,8 +110,6 @@ export default function Page() {
           const options = {
             method: "POST",
             headers: {
-              "x-rapidapi-key": apiKey,
-              "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
               "Content-Type": "application/json",
             },
             body: JSON.stringify({

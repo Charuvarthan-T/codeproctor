@@ -121,17 +121,14 @@ int main() {
 
   async function handleClick() {
     setIsLoading(true);
-    const apiKey = process.env.NEXT_PUBLIC_JUDGE0_API_KEY;
     const apiUrl = process.env.NEXT_PUBLIC_JUDGE0_API_URL;
 
-    if (apiKey && apiUrl) {
+    if (apiUrl) {
       const url = `${apiUrl}/submissions?base64_encoded=false&wait=true`;
 
       const options = {
         method: "POST",
         headers: {
-          "x-rapidapi-key": apiKey,
-          "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
