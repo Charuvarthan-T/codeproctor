@@ -179,6 +179,80 @@ export async function getCourseSpecificProblems(courseId: string) {
   }
 }
 
+// Template interfaces
+export interface ProblemTemplate {
+  python?: string;
+  java?: string;
+  javascript?: string;
+  c?: string;
+  cpp?: string;
+}
+
+// Create or update problem template
+export async function createOrUpdateProblemTemplate(
+  problemId: string,
+  templates: ProblemTemplate
+) {
+  try {
+    const result = await sql`
+      INSERT INTO problem_templates (problem_id, python, java, javascript, c, cpp)
+      VALUES (${problemId}, ${templates.python || null}, ${templates.java || null}, 
+              ${templates.javascript || null}, ${templates.c || null}, ${templates.cpp || null})
+      ON CONFLICT (problem_id)
+      DO UPDATE SET 
+        python = EXCLUDED.python,
+        java = EXCLUDED.java,
+        javascript = EXCLUDED.javascript,
+        c = EXCLUDED.c,
+        cpp = EXCLUDED.cpp,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *
+    `;
+    return result[0];
+  } catch (error) {
+    console.error("Error creating/updating problem template:", error);
+    throw error;
+  }
+}
+
+// Get problem template by problem ID
+export async function getProblemTemplate(problemId: string) {
+  try {
+    const result = await sql`
+      SELECT python, java, javascript, c, cpp 
+      FROM problem_templates 
+      WHERE problem_id = ${problemId}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error("Error getting problem template:", error);
+    throw error;
+  }
+}
+
+// Get template for specific language
+export async function getProblemTemplateByLanguage(
+  problemId: string,
+  language: string
+) {
+  try {
+    const allowedLanguages = ['python', 'java', 'javascript', 'c', 'cpp'];
+    if (!allowedLanguages.includes(language)) {
+      throw new Error('Unsupported language');
+    }
+
+    const result = await sql`
+      SELECT ${sql.unsafe(language)} as template_code 
+      FROM problem_templates 
+      WHERE problem_id = ${problemId}
+    `;
+    return result[0]?.template_code || '';
+  } catch (error) {
+    console.error("Error getting problem template by language:", error);
+    throw error;
+  }
+}
+
 // Create problem with test cases
 export async function createProblemWithTestCases(
   problemData: createProblem,
@@ -208,6 +282,27 @@ export async function createProblemWithTestCases(
     return problem;
   } catch (error) {
     console.error("Error creating problem with test cases:", error);
+    throw error;
+  }
+}
+
+// Create problem with templates
+export async function createProblemWithTemplates(
+  problemData: createProblem,
+  templates: ProblemTemplate
+) {
+  try {
+    // Create the problem
+    const problem = await createProblem(problemData);
+    
+    // Create templates if provided
+    if (Object.keys(templates).length > 0) {
+      await createOrUpdateProblemTemplate(problem.id, templates);
+    }
+    
+    return problem;
+  } catch (error) {
+    console.error("Error creating problem with templates:", error);
     throw error;
   }
 }

@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Editor from "@monaco-editor/react";
 import { Plus, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -56,6 +58,14 @@ export interface Problem {
   created_by?: string;
 }
 
+export interface ProblemTemplate {
+  python?: string;
+  java?: string;
+  javascript?: string;
+  c?: string;
+  cpp?: string;
+}
+
 export default function EditProblemPage() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [title, setTitle] = useState("");
@@ -73,9 +83,36 @@ export default function EditProblemPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [testcaseToDelete, setTestcaseToDelete] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<ProblemTemplate>({
+    python: '',
+    java: '',
+    javascript: '',
+    c: '',
+    cpp: ''
+  });
+  const [activeTemplateTab, setActiveTemplateTab] = useState('python');
+  const [isUpdatingTemplates, setIsUpdatingTemplates] = useState(false);
 
   const { id } = useParams();
   const router = useRouter();
+
+  // Language mapping for Monaco Editor
+  const getMonacoLanguage = (lang: string): string => {
+    switch (lang) {
+      case "cpp":
+        return "cpp";
+      case "c":
+        return "c";
+      case "python":
+        return "python";
+      case "java":
+        return "java";
+      case "javascript":
+        return "javascript";
+      default:
+        return "javascript";
+    }
+  };
 
   const fetchProblem = useCallback(
     async function () {
@@ -149,6 +186,29 @@ export default function EditProblemPage() {
         }
       } catch (error) {
         console.error("Failed to fetch test cases:", error);
+      }
+    },
+    [id]
+  );
+
+  const fetchTemplates = useCallback(
+    async function () {
+      try {
+        const res = await fetch(`/api/problems/${id}/template`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.templates) {
+            setTemplates({
+              python: data.templates.python || '',
+              java: data.templates.java || '',
+              javascript: data.templates.javascript || '',
+              c: data.templates.c || '',
+              cpp: data.templates.cpp || ''
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch templates:", error);
       }
     },
     [id]
@@ -319,14 +379,40 @@ export default function EditProblemPage() {
     }
   }
 
+  async function handleUpdateTemplates() {
+    setIsUpdatingTemplates(true);
+
+    try {
+      const res = await fetch(`/api/problems/${id}/template`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templates),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update templates");
+      }
+
+      toast.success("Templates updated successfully!");
+    } catch (error) {
+      console.error("Error updating templates:", error);
+      toast.error("Failed to update templates");
+    } finally {
+      setIsUpdatingTemplates(false);
+    }
+  }
+
   useEffect(() => {
     if (id) {
       fetchProblem();
       fetchTags();
       fetchProblemTags();
       fetchTestCases();
+      fetchTemplates();
     }
-  }, [id, fetchProblem, fetchTags, fetchProblemTags, fetchTestCases]);
+  }, [id, fetchProblem, fetchTags, fetchProblemTags, fetchTestCases, fetchTemplates]);
 
   useEffect(() => {
     console.log("Test cases state updated:", testcases);
@@ -366,7 +452,7 @@ export default function EditProblemPage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Problem Details</CardTitle>
@@ -541,6 +627,154 @@ export default function EditProblemPage() {
                 ))
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Template Code</CardTitle>
+            <CardDescription>
+              Update starter code templates for different programming languages
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Tabs value={activeTemplateTab} onValueChange={setActiveTemplateTab}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="python">Python</TabsTrigger>
+                <TabsTrigger value="java">Java</TabsTrigger>
+                <TabsTrigger value="javascript">JS</TabsTrigger>
+                <TabsTrigger value="c">C</TabsTrigger>
+                <TabsTrigger value="cpp">C++</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="python" className="space-y-2">
+                <Label htmlFor="python-template">Python Template</Label>
+                <div className="rounded-lg border overflow-hidden" style={{ height: '150px' }}>
+                  <Editor
+                    height="100%"
+                    language={getMonacoLanguage("python")}
+                    theme="vs-dark"
+                    value={templates.python || "def solution():\n    # Your code here\n    pass"}
+                    options={{
+                      padding: { top: 10, bottom: 10 },
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      wordWrap: 'on',
+                    }}
+                    onChange={(value) => setTemplates({
+                      ...templates,
+                      python: value || ""
+                    })}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="java" className="space-y-2">
+                <Label htmlFor="java-template">Java Template</Label>
+                <div className="rounded-lg border overflow-hidden" style={{ height: '150px' }}>
+                  <Editor
+                    height="100%"
+                    language={getMonacoLanguage("java")}
+                    theme="vs-dark"
+                    value={templates.java || "public class Solution {\n    public static void main(String[] args) {\n        // Your code here\n    }\n}"}
+                    options={{
+                      padding: { top: 10, bottom: 10 },
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      wordWrap: 'on',
+                    }}
+                    onChange={(value) => setTemplates({
+                      ...templates,
+                      java: value || ""
+                    })}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="javascript" className="space-y-2">
+                <Label htmlFor="javascript-template">JavaScript Template</Label>
+                <div className="rounded-lg border overflow-hidden" style={{ height: '150px' }}>
+                  <Editor
+                    height="100%"
+                    language={getMonacoLanguage("javascript")}
+                    theme="vs-dark"
+                    value={templates.javascript || "function solution() {\n    // Your code here\n}"}
+                    options={{
+                      padding: { top: 10, bottom: 10 },
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      wordWrap: 'on',
+                    }}
+                    onChange={(value) => setTemplates({
+                      ...templates,
+                      javascript: value || ""
+                    })}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="c" className="space-y-2">
+                <Label htmlFor="c-template">C Template</Label>
+                <div className="rounded-lg border overflow-hidden" style={{ height: '150px' }}>
+                  <Editor
+                    height="100%"
+                    language={getMonacoLanguage("c")}
+                    theme="vs-dark"
+                    value={templates.c || "#include <stdio.h>\n\nint main() {\n    // Your code here\n    return 0;\n}"}
+                    options={{
+                      padding: { top: 10, bottom: 10 },
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      wordWrap: 'on',
+                    }}
+                    onChange={(value) => setTemplates({
+                      ...templates,
+                      c: value || ""
+                    })}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="cpp" className="space-y-2">
+                <Label htmlFor="cpp-template">C++ Template</Label>
+                <div className="rounded-lg border overflow-hidden" style={{ height: '150px' }}>
+                  <Editor
+                    height="100%"
+                    language={getMonacoLanguage("cpp")}
+                    theme="vs-dark"
+                    value={templates.cpp || "#include <iostream>\nusing namespace std;\n\nint main() {\n    // Your code here\n    return 0;\n}"}
+                    options={{
+                      padding: { top: 10, bottom: 10 },
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      automaticLayout: true,
+                      wordWrap: 'on',
+                    }}
+                    onChange={(value) => setTemplates({
+                      ...templates,
+                      cpp: value || ""
+                    })}
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <Button
+              onClick={handleUpdateTemplates}
+              disabled={isUpdatingTemplates}
+              className="w-full"
+            >
+              {isUpdatingTemplates ? "Updating..." : "Update Templates"}
+            </Button>
           </CardContent>
         </Card>
       </div>

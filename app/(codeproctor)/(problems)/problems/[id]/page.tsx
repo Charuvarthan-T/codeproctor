@@ -54,6 +54,7 @@ export default function Page() {
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [showTestCases, setShowTestCases] = useState(true);
   const [selectedTestCase, setSelectedTestCase] = useState(0);
+  const [templates, setTemplates] = useState<{[key: string]: string}>({});
 
   // end of test case logic
 
@@ -223,59 +224,76 @@ export default function Page() {
     }
   }
 
-  // LeetCode-style problem templates for common patterns (clean user-facing code)
-  const problemTemplates = {
-    "two-sum": {
-      javascript: `function twoSum(nums, target) {
-    // Write your solution here
-    return [];
-}`,
+  // TEMPLATE FETCHING FUNCTION:
+  async function fetchTemplates() {
+    try {
+      console.log("Fetching templates for problem:", id);
+      const response = await fetch(`/api/problems/${id}/template`);
+      console.log("Template response status:", response.status);
       
-      python: `def twoSum(nums, target):
-    # Write your solution here
-    return []`
-    },
-    
-    "palindrome": {
-      javascript: `function isPalindrome(s) {
-    // Write your solution here
-    return false;
-}`,
-      
-      python: `def isPalindrome(s):
-    # Write your solution here
-    return False`
-    },
-
-    "add-numbers": {
-      javascript: `function addNumbers(a, b) {
-    // Write your solution here
-    return a + b;
-}`,
-      
-      python: `def addNumbers(a, b):
-    # Write your solution here
-    return a + b`
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Template data received:", data);
+        
+        if (data.templates && typeof data.templates === 'object') {
+          console.log("Setting templates:", data.templates);
+          setTemplates(data.templates);
+        } else if (data.templates === null) {
+          console.log("No templates found for this problem");
+          setTemplates({}); // Set empty object if no templates exist
+        } else {
+          console.log("Invalid templates format in response");
+          setTemplates({});
+        }
+      } else {
+        console.error("Failed to fetch templates, status:", response.status);
+        const errorText = await response.text();
+        console.error("Error response:", errorText);
+        setTemplates({}); // Set empty object on error
+      }
+    } catch (error) {
+      console.error("Error fetching templates:", error);
+      setTemplates({}); // Set empty object on error
     }
-  };
+  }
+
+
 
   // LeetCode-style clean user templates (what users see and edit)
   const getUserTemplate = (lang: string): string => {
-    // If problem has custom function signatures, use them (highest priority)
+    console.log("=== Getting template for language:", lang, "===");
+    console.log("Available templates object:", templates);
+    console.log("Template keys:", Object.keys(templates || {}));
+    
+    // First priority: Check if we have a template from the database
+    if (templates && typeof templates === 'object' && templates[lang]) {
+      const dbTemplate = templates[lang];
+      console.log("Database template for", lang, ":", dbTemplate);
+      if (dbTemplate && dbTemplate.trim() !== '') {
+        console.log("✅ USING DATABASE TEMPLATE for", lang);
+        return dbTemplate;
+      } else {
+        console.log("❌ Database template is empty for", lang);
+      }
+    } else {
+      console.log("❌ No database template found for", lang);
+      console.log("Templates type:", typeof templates);
+      console.log("Templates value:", templates);
+    }
+    
+    // Second priority: If problem has custom function signatures, use them
     if (problem.function_signatures && problem.function_signatures[lang as keyof typeof problem.function_signatures]) {
+      console.log("✅ Using function signature template for", lang);
       return problem.function_signatures[lang as keyof typeof problem.function_signatures] || getCleanTemplate(lang);
     }
     
-    // If problem has a template type, use predefined template
-    if (problem.template_type && problemTemplates[problem.template_type as keyof typeof problemTemplates]) {
-      const template = problemTemplates[problem.template_type as keyof typeof problemTemplates];
-      if (template && template[lang as keyof typeof template]) {
-        return template[lang as keyof typeof template];
-      }
-    }
+
     
     // Fall back to clean template (what users see)
-    return getCleanTemplate(lang);
+    console.log("⚠️ Using fallback template for", lang);
+    const fallback = getCleanTemplate(lang);
+    console.log("Fallback template:", fallback.substring(0, 50) + "...");
+    return fallback;
   };
 
   // Clean templates that users see and edit (LeetCode-style)
@@ -335,80 +353,6 @@ char* solution(char* input) {
 
   // Boilerplate code that gets added when running (hidden from users)
   const getBoilerplateCode = (lang: string, userCode: string): string => {
-    // Handle specific problem template boilerplates
-    if (problem.template_type) {
-      switch (problem.template_type) {
-        case "two-sum":
-          if (lang === "javascript") {
-            return `${userCode}
-
-// Auto-generated boilerplate for two-sum
-const input = require('fs').readFileSync(0, 'utf8').trim().split('\\n');
-const nums = JSON.parse(input[0]);
-const target = parseInt(input[1]);
-const result = twoSum(nums, target);
-console.log(JSON.stringify(result));`;
-          }
-          if (lang === "python") {
-            return `${userCode}
-
-# Auto-generated boilerplate for two-sum
-import sys
-import json
-input_lines = sys.stdin.read().strip().split('\\n')
-nums = json.loads(input_lines[0])
-target = int(input_lines[1])
-result = twoSum(nums, target)
-print(json.dumps(result))`;
-          }
-          break;
-          
-        case "palindrome":
-          if (lang === "javascript") {
-            return `${userCode}
-
-// Auto-generated boilerplate for palindrome
-const input = require('fs').readFileSync(0, 'utf8').trim();
-const result = isPalindrome(input);
-console.log(result);`;
-          }
-          if (lang === "python") {
-            return `${userCode}
-
-# Auto-generated boilerplate for palindrome
-import sys
-s = sys.stdin.read().strip()
-result = isPalindrome(s)
-print(str(result).lower())`;
-          }
-          break;
-
-        case "add-numbers":
-          if (lang === "javascript") {
-            return `${userCode}
-
-// Auto-generated boilerplate for add-numbers
-const input = require('fs').readFileSync(0, 'utf8').trim().split(' ');
-const a = parseInt(input[0]);
-const b = parseInt(input[1]);
-const result = addNumbers(a, b);
-console.log(result);`;
-          }
-          if (lang === "python") {
-            return `${userCode}
-
-# Auto-generated boilerplate for add-numbers
-import sys
-input_line = sys.stdin.read().strip().split()
-a = int(input_line[0])
-b = int(input_line[1])
-result = addNumbers(a, b)
-print(result)`;
-          }
-          break;
-      }
-    }
-
     // Generic boilerplate for other problems
     switch (lang) {
       case "python":
@@ -501,18 +445,33 @@ int main() {
     fetchProblemStatus();
     fetchProblem();
     fetchTestCases(); // added this part for test cases
+    fetchTemplates(); // added this part for templates
   }, [id]);
 
-  // Debug language changes
+  // Initialize code when templates are loaded
+  useEffect(() => {
+    if (Object.keys(templates).length > 0) {
+      console.log("Templates loaded, initializing code for", language);
+      const template = getUserTemplate(language);
+      setCode(template);
+    }
+  }, [templates]);
+
+  // Update code when language changes or templates are loaded
   useEffect(() => {
     console.log("Language changed to:", language);
+    console.log("Templates:", templates);
+    const template = getUserTemplate(language);
     console.log(
-      "Default code for",
+      "Template for",
       language,
       ":",
-      getUserTemplate(language).substring(0, 50) + "..."
+      template.substring(0, 50) + "..."
     );
-  }, [language]);
+    
+    // FORCE update the code every time language or templates change
+    setCode(template);
+  }, [language, templates]);
 
   return (
     <div className="flex flex-col h-[85vh]">
@@ -637,7 +596,8 @@ int main() {
               height="100%"
               language={getMonacoLanguage(language)}
               theme="vs-dark"
-              value={code || getUserTemplate(language)}
+              value={code}
+              key={`${language}-${JSON.stringify(templates)}`}
               options={{
                 padding: { top: 20, bottom: 20 },
                 fontSize: 14,
