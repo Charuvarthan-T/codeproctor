@@ -8,20 +8,13 @@ import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import Editor from "@monaco-editor/react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";  
 import { Badge } from "@/components/ui/badge";
 
 export default function Page() {
@@ -159,6 +152,7 @@ export default function Page() {
           
           if (allTestsPassed) {
             setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0`);
+            handleSwitchChange(true); // Automatically mark as solved if all tests pass
           } else {
             const firstFailedIndex = results.findIndex(r => !r.passed);
             setOutput(`❌ Wrong Answer\n\nTest case ${firstFailedIndex + 1} failed\nPassed: ${passedCount}/${results.length}\n\nSee test cases below for details.`);
