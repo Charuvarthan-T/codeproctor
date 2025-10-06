@@ -126,16 +126,6 @@ export async function getMyCoursesForFaculty(facultyId: string) {
   }
 }
 
-export async function getUserPoints(userId: string) {
-  try {
-    const res = await sql`SELECT COALESCE(points_earned, 0) as points_earned FROM users WHERE id = ${userId}`;
-    return res[0]?.points_earned ?? 0;
-  } catch (error) {
-    console.error('Error getting user points:', error);
-    throw error;
-  }
-}
-
 export async function getMyCoursesForStudent(studentId: string) {
   try {
     const courses = await sql`
