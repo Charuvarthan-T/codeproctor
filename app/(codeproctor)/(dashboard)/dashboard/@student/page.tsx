@@ -310,28 +310,6 @@ export default function StudentDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
-                    {/* Progress Bar */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>
-                          {course.solved_problems}/{course.total_problems}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(
-                            course.solved_problems,
-                            course.total_problems
-                          )}`}
-                          style={{ width: `${progressPercentage}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {Math.round(progressPercentage)}% complete
-                      </p>
-                    </div>
-
                     <Button
                       asChild
                       className="w-full"
