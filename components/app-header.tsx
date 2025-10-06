@@ -26,8 +26,15 @@ export function AppHeader() {
       }
     }
 
+    function onPointsUpdated(e: any) {
+      const val = e?.detail?.totalPoints;
+      if (typeof val === 'number') setPoints(val);
+      else fetchPoints();
+    }
+
     if (session) fetchPoints();
-    return () => { mounted = false; };
+    window.addEventListener('pointsUpdated', onPointsUpdated);
+    return () => { mounted = false; window.removeEventListener('pointsUpdated', onPointsUpdated); };
   }, [session]);
 
   return (

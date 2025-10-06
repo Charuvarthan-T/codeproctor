@@ -173,6 +173,14 @@ export default function Page() {
                   // Not awarded because already solved; show total if provided
                   if (data.totalPoints) pointsLine = `\n\nPoints total: ${data.totalPoints}`;
                 }
+                // Broadcast the updated totalPoints so other UI (header) can refresh immediately
+                try {
+                  if (data && typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: data.totalPoints } }));
+                  }
+                } catch (e) {
+                  /* ignore in non-browser env */
+                }
               }
 
               // mark as solved only if award succeeded (or if we didn't get a decisive response, still attempt)
