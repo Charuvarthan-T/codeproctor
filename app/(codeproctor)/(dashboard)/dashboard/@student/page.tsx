@@ -1,13 +1,13 @@
-import React from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { BookOpen, CheckCircle, Trophy, TrendingUp } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function StudentDashboard() {
-  return <h1>Student Dashboard coming soon...</h1>;
+  const {data: session} = useSession();
+  const user = session?.user;
+
+  return <h1 className="text-2xl font-bold">Welcome back {user?.name} !</h1>;
+  // current section, semester, academic year
+  // number of problems solved
+  // enrolled courses
+  // upcoming contests
+  // recent activities
 }
