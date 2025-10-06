@@ -1,9 +1,366 @@
 "use client";
 import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  BookOpen,
+  Users,
+  FileText,
+  GraduationCap,
+  Calendar,
+  ArrowRight,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
+
+interface Course {
+  id: string;
+  name: string;
+  section_name: string;
+  semester_name: string;
+}
+
+interface DashboardData {
+  courses: Course[];
+  statistics: {
+    n_courses: number;
+    n_sections: number;
+    n_students: number;
+    n_problems: number;
+  };
+  recent_activity?: {
+    id: string;
+    created_at: string;
+    status: string;
+    student_name: string;
+    problem_title: string;
+    course_name: string;
+  }[];
+}
+
+const quickActions = [
+  {
+    title: "View All Problems",
+    description: "Browse and manage coding problems",
+    href: "/problems",
+    icon: FileText,
+    color: "bg-blue-500",
+  },
+  {
+    title: "My Courses",
+    description: "Manage your assigned courses",
+    href: "/my-courses",
+    icon: BookOpen,
+    color: "bg-green-500",
+  },
+  {
+    title: "Code Editor",
+    description: "Test and create code solutions",
+    href: "/editor",
+    icon: GraduationCap,
+    color: "bg-purple-500",
+  },
+];
+
+const getStatusIcon = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "accepted":
+    case "correct":
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    case "wrong answer":
+    case "failed":
+      return <XCircle className="h-4 w-4 text-red-500" />;
+    case "pending":
+    case "running":
+      return <Clock className="h-4 w-4 text-yellow-500" />;
+    default:
+      return <AlertCircle className="h-4 w-4 text-gray-500" />;
+  }
+};
+
+const getStatusBadgeVariant = (status: string) => {
+  switch (status.toLowerCase()) {
+    case "accepted":
+    case "correct":
+      return "default";
+    case "wrong answer":
+    case "failed":
+      return "destructive";
+    case "pending":
+    case "running":
+      return "secondary";
+    default:
+      return "outline";
+  }
+};
 
 export default function FacultyDashboard() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/faculty_dashboard");
+        const json = await res.json();
+
+        if (json.success) {
+          setData(json.data);
+        } else {
+          setError(json.error || "Failed to fetch dashboard data");
+        }
+      } catch (err) {
+        setError("An error occurred while fetching data");
+        console.error("Error fetching faculty dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const { data: session } = useSession();
   const user = session?.user;
 
-  return <h1 className="text-2xl font-bold">Welcome back {user?.name} !</h1>;
+  if (loading) {
+    return (
+      <div className="space-y-8 p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-muted animate-pulse rounded"></div>
+            <div className="h-4 w-96 bg-muted animate-pulse rounded"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted animate-pulse rounded"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-center text-red-600">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const statsCards = data
+    ? [
+        {
+          title: "My Courses",
+          value: data.statistics.n_courses,
+          icon: BookOpen,
+          color: "text-blue-600",
+        },
+        {
+          title: "Sections",
+          value: data.statistics.n_sections,
+          icon: Users,
+          color: "text-green-600",
+        },
+        {
+          title: "Students",
+          value: data.statistics.n_students,
+          icon: GraduationCap,
+          color: "text-purple-600",
+        },
+        {
+          title: "Problems",
+          value: data.statistics.n_problems,
+          icon: FileText,
+          color: "text-orange-600",
+        },
+      ]
+    : [];
+
+  return (
+    <div className="space-y-8 p-6">
+      {/* Welcome Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user?.name}! 👋
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Here's an overview of your courses and recent activity.
+          </p>
+        </div>
+        <Badge variant="secondary" className="flex items-center gap-2">
+          <GraduationCap className="h-4 w-4" />
+          Faculty Dashboard
+        </Badge>
+      </div>
+
+      {/* Statistics Grid */}
+      {data && (
+        <div>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="h-6 w-6" />
+            Your Overview
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {statsCards.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <Card key={index} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </CardTitle>
+                    <IconComponent className={`h-5 w-5 ${stat.color}`} />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">
+                      {stat.value.toLocaleString()}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* My Courses */}
+      {data && data.courses.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+            <BookOpen className="h-6 w-6" />
+            My Courses
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {data.courses.map((course, index) => (
+              <Card
+                key={index}
+                className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="p-2 rounded-lg bg-blue-500 bg-opacity-10">
+                      <BookOpen className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <CardTitle className="text-lg line-clamp-2">
+                    {course.name}
+                  </CardTitle>
+                  <CardDescription>
+                    {course.section_name} • {course.semester_name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0 space-y-2">
+                  <Button asChild className="w-full" variant="outline" size="sm">
+                    <Link
+                      href={`/my-courses/${course.id}/problems`}
+                      className="flex items-center gap-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Problems
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
+          <TrendingUp className="h-6 w-6" />
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          {quickActions.map((action, index) => {
+            const IconComponent = action.icon;
+            return (
+              <Card
+                key={index}
+                className="group hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`p-2 rounded-lg ${action.color} bg-opacity-10`}
+                    >
+                      <IconComponent
+                        className={`h-6 w-6 ${action.color.replace(
+                          "bg-",
+                          "text-"
+                        )}`}
+                      />
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
+                  </div>
+                  <CardTitle className="text-lg">{action.title}</CardTitle>
+                  <CardDescription>{action.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <Button asChild className="w-full" variant="outline">
+                    <Link href={action.href}>Go to {action.title}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Empty State for Courses */}
+      {data && data.courses.length === 0 && (
+        <Card className="border-dashed">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              No Courses Assigned
+            </CardTitle>
+            <CardDescription>
+              You don't have any courses assigned yet. Contact your
+              administrator to get started.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-center py-8">
+              Once courses are assigned, you'll see them here with quick access
+              to problems and students.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }

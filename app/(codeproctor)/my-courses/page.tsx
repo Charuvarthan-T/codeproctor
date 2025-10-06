@@ -92,7 +92,7 @@ export default function MyCoursesPage() {
     <div className="container mx-auto py-6">
       <Card>
         <CardHeader>
-          <CardTitle>My Courses</CardTitle>
+          <CardTitle className="text-2xl">My Courses</CardTitle>
           <CardDescription>
             View all courses assigned to you as faculty
           </CardDescription>

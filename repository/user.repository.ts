@@ -110,7 +110,7 @@ export async function assignRoleToUser(userId: string, role: string) {
 }
 
 export async function getMyCoursesForFaculty(facultyId: string) {
-  try{
+  try {
     const courses = await sql`
       SELECT c.id, c.name, s.name as section_name, sm.name as semester_name
       FROM faculty_courses_section fcs
@@ -136,5 +136,31 @@ export async function getUserPoints(userId: string) {
   }
 }
 
+export async function getMyCoursesForStudent(studentId: string) {
+  try {
+    const courses = await sql`
+      SELECT DISTINCT c.id, c.name, s.name as section_name, sm.name as semester_name, s.id as section_id
+      FROM sections_users su
+      JOIN sections s ON su.sectionid = s.id
+      JOIN semesters sm ON s.semesterid = sm.id
+      JOIN semesters_courses sc ON sm.id = sc.sem_id
+      JOIN courses c ON sc.course_id = c.id
+      WHERE su.userid = ${studentId}
+      ORDER BY c.name ASC`;
+    return courses;
+  } catch (error) {
+    console.error("Error getting my courses for student:", error);
+    throw error;
+  }
+}
 
-
+export async function getUserPoints(userId: string) {
+  try {
+    const res =
+      await sql`SELECT COALESCE(points_earned, 0) as points_earned FROM users WHERE id = ${userId}`;
+    return res[0]?.points_earned ?? 0;
+  } catch (error) {
+    console.error("Error getting user points:", error);
+    throw error;
+  }
+}
