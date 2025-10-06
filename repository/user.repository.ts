@@ -100,3 +100,4 @@ export async function getMyCoursesForFaculty(facultyId: string) {
     throw error;
   }
 }
+

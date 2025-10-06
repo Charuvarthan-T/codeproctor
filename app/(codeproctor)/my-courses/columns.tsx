@@ -125,7 +125,7 @@ export const createCourseColumns = (userRole: string) => {
         return (
           <div className="flex justify-between">
             <ActionsDropdown course={course} />
-            {userRole !== "Student" && <ActionCell course={course} />}
+            {userRole !== "student" && <ActionCell course={course} />}
           </div>
         );
       },

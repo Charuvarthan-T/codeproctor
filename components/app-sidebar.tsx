@@ -88,7 +88,7 @@ const sidebarItems: SidebarItem[] = [
 export default function AppSidebar() {
   const { data: session } = useSession();
   if(!session?.user){
-    return <h1>Please login first</h1>
+    return;
   }
   const user = session?.user;
 

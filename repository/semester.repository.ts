@@ -127,3 +127,22 @@ export async function deleteSemester(id: string) {
     return { success: false, message: `Delete semester ${id} failed` };
   }
 }
+
+export async function getCoursesByUserId(userId: string) {
+  try {
+    const courses = await sql`
+     SELECT c.id, c.name, sec.name as section_name, s.name as semester_name
+      FROM courses c
+      JOIN semesters_courses sc ON c.id = sc.course_id
+      JOIN semesters s ON sc.sem_id = s.id
+      JOIN sections sec ON s.id = sec.semesterid
+      JOIN sections_users su ON sec.id = su.sectionid
+      WHERE su.userid = ${userId}
+    `;
+
+    return courses;
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
+}

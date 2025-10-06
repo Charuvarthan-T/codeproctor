@@ -128,10 +128,12 @@ export default function CourseProblemsPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => setAssignDialogOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Assign Problems
-          </Button>
+          {userRole !== "student" && (
+            <Button onClick={() => setAssignDialogOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Assign Problems
+            </Button>
+          )}
         </div>
       </div>
 

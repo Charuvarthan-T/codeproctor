@@ -88,7 +88,7 @@ const ActionsDropdown = ({
             <Eye className="mr-2 h-4 w-4" />
             View Problem
           </DropdownMenuItem>
-          {userRole !== "Student" && (
+          {userRole !== "student" && (
             <>
               <DropdownMenuItem onClick={handleEdit}>
                 <Edit className="mr-2 h-4 w-4" />
@@ -196,18 +196,6 @@ export const createCourseProblemColumns = (
           <div className="max-w-[300px] truncate" title={description}>
             {description}
           </div>
-        );
-      },
-    },
-    {
-      accessorKey: "template_type",
-      header: "Type",
-      cell: ({ row }) => {
-        const templateType = row.getValue("template_type") as string;
-        return templateType ? (
-          <Badge variant="secondary">{templateType}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
         );
       },
     },
