@@ -16,25 +16,28 @@ export function AppHeader() {
     let mounted = true;
     async function fetchPoints() {
       try {
-        const res = await fetch('/api/users/me/points');
+        const res = await fetch("/api/users/me/points");
         if (res.ok) {
           const data = await res.json();
           if (mounted) setPoints(data.points ?? 0);
         }
       } catch (e) {
-        console.warn('Failed to fetch user points', e);
+        console.warn("Failed to fetch user points", e);
       }
     }
 
     function onPointsUpdated(e: any) {
       const val = e?.detail?.totalPoints;
-      if (typeof val === 'number') setPoints(val);
+      if (typeof val === "number") setPoints(val);
       else fetchPoints();
     }
 
     if (session) fetchPoints();
-    window.addEventListener('pointsUpdated', onPointsUpdated);
-    return () => { mounted = false; window.removeEventListener('pointsUpdated', onPointsUpdated); };
+    window.addEventListener("pointsUpdated", onPointsUpdated);
+    return () => {
+      mounted = false;
+      window.removeEventListener("pointsUpdated", onPointsUpdated);
+    };
   }, [session]);
 
   return (
@@ -52,14 +55,16 @@ export function AppHeader() {
         {session ? (
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <Image
-                src={session.user?.image || "/image.png"}
-                alt="Profile"
-                width={100}
-                height={100}
-                priority
-                className="w-9 h-9 rounded-full ring-2 ring-border"
-              />
+              <div>
+                <Image
+                  src={session.user?.image || "/image.png"}
+                  alt="Profile"
+                  width={100}
+                  height={100}
+                  priority
+                  className="w-9 h-9 rounded-full ring-2 ring-border"
+                />
+              </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-3">
                   <div>
@@ -70,12 +75,9 @@ export function AppHeader() {
                       {session.user?.email}
                     </p>
                   </div>
-
-                  {/* Points badge to the right of name */}
                   <div className="relative">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-sm hover:scale-105 transform transition-transform focus:outline-none"
                       onClick={() => setOpen((s) => !s)}
                       aria-expanded={open}
                       aria-label="Show my points"
@@ -92,12 +94,20 @@ export function AppHeader() {
                             <span className="text-amber-400">🔥</span>
                             <span className="font-medium">Points</span>
                           </div>
-                          <button className="text-xs text-muted-foreground" onClick={() => setOpen(false)}>Close</button>
+                          <button
+                            className="text-xs text-muted-foreground"
+                            onClick={() => setOpen(false)}
+                          >
+                            Close
+                          </button>
                         </div>
                         <div className="mt-2 text-sm text-foreground">
-                          Total points: <span className="font-mono ml-1">{points ?? 0}</span>
+                          Total points:{" "}
+                          <span className="font-mono ml-1">{points ?? 0}</span>
                         </div>
-                        <div className="mt-2 text-xs text-muted-foreground">Keep solving problems to earn more points!</div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Keep solving problems to earn more points!
+                        </div>
                       </div>
                     )}
                   </div>

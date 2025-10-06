@@ -68,8 +68,8 @@ export interface createSectionType{
 
 export async function createSection(newSection: createSectionType){
     try{
-        await sql`INSERT INTO sections (name, semesterid, departmentid)
-        VALUES(${newSection.name}, ${newSection.semesterid}, ${newSection.departmentid})`
+        await sql`INSERT INTO sections (name, semesterid)
+        VALUES(${newSection.name}, ${newSection.semesterid})`
         return true;
     }
     catch(e){
@@ -113,15 +113,11 @@ export async function getSectionsWithPagination(
       const searchPattern = `%${search}%`;
       
       sections = await sql`
-        SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, 
-               departments.name as department_name, sections.isactive as is_active,
-               sections.semesterid, sections.departmentid
+        SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, sections.isactive as is_active
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
-        INNER JOIN departments ON sections.departmentid = departments.id
         WHERE sections.name ILIKE ${searchPattern} 
            OR semesters.name ILIKE ${searchPattern} 
-           OR departments.name ILIKE ${searchPattern}
         ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
@@ -130,20 +126,17 @@ export async function getSectionsWithPagination(
         SELECT COUNT(DISTINCT sections.id) as count 
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
-        INNER JOIN departments ON sections.departmentid = departments.id
         WHERE sections.name ILIKE ${searchPattern} 
            OR semesters.name ILIKE ${searchPattern} 
-           OR departments.name ILIKE ${searchPattern}
       `;
     } else {
 
       sections = await sql`
         SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, 
-               departments.name as department_name, sections.isactive as is_active,
+               sections.isactive as is_active,
                sections.semesterid, sections.departmentid
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
-        INNER JOIN departments ON sections.departmentid = departments.id
         ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
@@ -152,7 +145,6 @@ export async function getSectionsWithPagination(
         SELECT COUNT(DISTINCT sections.id) as count 
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
-        INNER JOIN departments ON sections.departmentid = departments.id
       `;
     }
 
