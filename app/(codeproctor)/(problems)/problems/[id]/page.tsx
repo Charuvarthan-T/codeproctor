@@ -151,8 +151,44 @@ export default function Page() {
           const passedCount = results.filter(r => r.passed).length;
           
           if (allTestsPassed) {
-            setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0`);
-            handleSwitchChange(true); // Automatically mark as solved if all tests pass
+            // Award points (100) and update UI
+            try {
+              // call award-points API first (so the award write occurs even if marking completed has issues)
+              const awardRes = await fetch(`/api/problems/${id}/award-points`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ points: 100 }),
+              });
+
+              let pointsLine = '';
+              let awardedOk = false;
+              if (awardRes.ok) {
+                const data = await awardRes.json();
+                if (data.awarded) {
+                  awardedOk = true;
+                  // show awarded points and total
+                  pointsLine = `\n\nPoints score: 100`;
+                  if (data.totalPoints) pointsLine += `\nTotal points: ${data.totalPoints}`;
+                } else {
+                  // Not awarded because already solved; show total if provided
+                  if (data.totalPoints) pointsLine = `\n\nPoints total: ${data.totalPoints}`;
+                }
+              }
+
+              // mark as solved only if award succeeded (or if we didn't get a decisive response, still attempt)
+              try {
+                await handleSwitchChange(true);
+              } catch (e) {
+                console.warn('Failed to mark completed after awarding points:', e);
+              }
+
+              setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0${pointsLine}`);
+            } catch (e) {
+              console.error('Error awarding points:', e);
+              // still mark as solved if award failed to ensure progress tracking
+              try { await handleSwitchChange(true); } catch (_) {}
+              setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0\n\nPoints score: (failed to award)`);
+            }
           } else {
             const firstFailedIndex = results.findIndex(r => !r.passed);
             setOutput(`❌ Wrong Answer\n\nTest case ${firstFailedIndex + 1} failed\nPassed: ${passedCount}/${results.length}\n\nSee test cases below for details.`);

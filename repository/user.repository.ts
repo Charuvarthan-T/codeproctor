@@ -20,7 +20,7 @@ export async function getUsersWithPagination(
   try {
     const offset = (page - 1) * pageSize;
 
-    const allowedSortColumns = ["id", "name", "email", "role"];
+  const allowedSortColumns = ["id", "name", "email", "role", "points_earned"];
     const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
 
@@ -30,23 +30,48 @@ export async function getUsersWithPagination(
       search = search.trim();
       const searchPattern = `%${search}%`;
 
-      users = await sql`
-        SELECT id, name, email, role FROM users
-        WHERE name ILIKE ${searchPattern} OR role ILIKE ${searchPattern}
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
-        LIMIT ${pageSize} OFFSET ${offset}
-      `;
+      // Try to select points_earned; if the column doesn't exist, fall back to a query without it
+      try {
+        users = await sql`
+          SELECT id, name, email, role, COALESCE(points_earned, 0) as points_earned FROM users
+          WHERE name ILIKE ${searchPattern} OR role ILIKE ${searchPattern}
+          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+      } catch (e) {
+        const err: any = e;
+        console.warn('points_earned column missing or query failed; falling back to query without points:', err?.message || err);
+        users = await sql`
+          SELECT id, name, email, role FROM users
+          WHERE name ILIKE ${searchPattern} OR role ILIKE ${searchPattern}
+          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+        // normalize rows to include points_earned = 0
+        users = users.map((u: any) => ({ ...u, points_earned: 0 }));
+      }
 
       totalResult = await sql`
         SELECT COUNT(*) as count FROM users
         WHERE name ILIKE ${searchPattern} OR email ILIKE ${searchPattern}
       `;
     } else {
-      users = await sql`
-        SELECT id, name, email, role FROM users
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
-        LIMIT ${pageSize} OFFSET ${offset}
-      `;
+      try {
+        users = await sql`
+          SELECT id, name, email, role, COALESCE(points_earned, 0) as points_earned FROM users
+          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+      } catch (e) {
+        const err: any = e;
+        console.warn('points_earned column missing or query failed; falling back to query without points:', err?.message || err);
+        users = await sql`
+          SELECT id, name, email, role FROM users
+          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+        users = users.map((u: any) => ({ ...u, points_earned: 0 }));
+      }
 
       totalResult = await sql`SELECT COUNT(*) as count FROM users`;
     }
@@ -97,6 +122,16 @@ export async function getMyCoursesForFaculty(facultyId: string) {
     return courses;
   } catch (error) {
     console.error("Error getting my courses for faculty:", error);
+    throw error;
+  }
+}
+
+export async function getUserPoints(userId: string) {
+  try {
+    const res = await sql`SELECT COALESCE(points_earned, 0) as points_earned FROM users WHERE id = ${userId}`;
+    return res[0]?.points_earned ?? 0;
+  } catch (error) {
+    console.error('Error getting user points:', error);
     throw error;
   }
 }

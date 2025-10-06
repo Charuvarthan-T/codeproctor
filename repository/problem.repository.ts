@@ -162,6 +162,86 @@ export async function CheckProblemCompletedUser(
   return result[0]?.is_completed || "unsolved";
 }
 
+/**
+ * Award points to a user for a problem if not already awarded.
+ * - If the user has already solved the problem (problems_users.is_completed = 'solved'), do nothing.
+ * - Otherwise mark the problem as solved and increment users.points_earned by the provided points.
+ */
+export async function awardPointsForProblem(
+  userId: string,
+  problemId: string,
+  points: number
+) {
+  try {
+    // Sequentially perform the operations (Neon client doesn't expose a .begin transaction helper here)
+    // Check if already marked as solved
+    const existing = await sql`SELECT is_completed FROM problems_users WHERE userid = ${userId} AND problemid = ${problemId}`;
+    if (existing[0]?.is_completed === 'solved') {
+      // Already solved — return not awarded but include current total points if available
+      try {
+        const totals = await sql`SELECT points_earned FROM users WHERE id = ${userId}`;
+        const totalPoints = totals[0]?.points_earned ?? null;
+        return { awarded: false, totalPoints };
+      } catch (e) {
+        // If querying totals fails (migration not applied), still return not awarded
+        return { awarded: false, totalPoints: null };
+      }
+    }
+
+    // Upsert problems_users to mark as solved
+    await sql`INSERT INTO problems_users (userid, problemid, is_completed) VALUES (${userId}, ${problemId}, 'solved') ON CONFLICT (userid, problemid) DO UPDATE SET is_completed = 'solved'`;
+
+    // Increment user's points_earned (create column if missing)
+    try {
+      await sql`UPDATE users SET points_earned = COALESCE(points_earned, 0) + ${points} WHERE id = ${userId}`;
+    } catch (updateErr: any) {
+      const msg = (updateErr?.message || '').toLowerCase();
+      if (msg.includes('points_earned') || msg.includes('does not exist')) {
+        console.warn('points_earned column missing; attempting to add column and retry update');
+        try {
+          await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`;
+          // retry update
+          await sql`UPDATE users SET points_earned = COALESCE(points_earned, 0) + ${points} WHERE id = ${userId}`;
+        } catch (ddlErr: any) {
+          console.error('Failed to create points_earned column or update it:', ddlErr?.message || ddlErr);
+          // proceed without throwing to allow audit log attempt
+        }
+      } else {
+        // unknown update error -> rethrow
+        throw updateErr;
+      }
+    }
+
+    // Insert audit log (create table if missing) and use JS-generated UUID to avoid requiring pg extensions
+    try {
+      // ensure table exists (without relying on gen_random_uuid())
+      await sql`
+        CREATE TABLE IF NOT EXISTS user_points_log (
+          id UUID PRIMARY KEY,
+          userid UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          problemid UUID NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
+          points INTEGER NOT NULL,
+          awarded_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        )`;
+
+      // generate uuid in JS
+      const id = (globalThis as any)?.crypto?.randomUUID ? (globalThis as any).crypto.randomUUID() : require('crypto').randomUUID();
+      await sql`INSERT INTO user_points_log (id, userid, problemid, points) VALUES (${id}, ${userId}, ${problemId}, ${points})`;
+    } catch (e: any) {
+      console.warn('user_points_log handling failed (table may not exist or permissions denied):', e?.message || e);
+      // continue silently
+    }
+
+    const totals = await sql`SELECT points_earned FROM users WHERE id = ${userId}`;
+    const totalPoints = totals[0]?.points_earned ?? null;
+
+    return { awarded: true, totalPoints };
+  } catch (error) {
+    console.error('Error awarding points:', error);
+    throw error;
+  }
+}
+
 // Get course-specific problems
 export async function getCourseSpecificProblems(courseId: string) {
   try {

@@ -5,9 +5,30 @@ import { Button } from "./ui/button";
 import { SidebarTrigger } from "./ui/sidebar";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export function AppHeader() {
   const { data: session } = useSession();
+  const [points, setPoints] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchPoints() {
+      try {
+        const res = await fetch('/api/users/me/points');
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted) setPoints(data.points ?? 0);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch user points', e);
+      }
+    }
+
+    if (session) fetchPoints();
+    return () => { mounted = false; };
+  }, [session]);
 
   return (
     <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,12 +54,47 @@ export function AppHeader() {
                 className="w-9 h-9 rounded-full ring-2 ring-border"
               />
               <div className="hidden sm:block">
-                <p className="text-sm font-medium text-foreground">
-                  {session.user?.name}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {session.user?.email}
-                </p>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {session.user?.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {session.user?.email}
+                    </p>
+                  </div>
+
+                  {/* Points badge to the right of name */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 shadow-sm hover:scale-105 transform transition-transform focus:outline-none"
+                      onClick={() => setOpen((s) => !s)}
+                      aria-expanded={open}
+                      aria-label="Show my points"
+                    >
+                      <span className="text-white">🔥</span>
+                      <span> {points ?? "-"} </span>
+                    </button>
+
+                    {/* Popover */}
+                    {open && (
+                      <div className="absolute right-0 mt-12 w-56 z-50 bg-card border rounded-md shadow-lg p-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-400">🔥</span>
+                            <span className="font-medium">Points</span>
+                          </div>
+                          <button className="text-xs text-muted-foreground" onClick={() => setOpen(false)}>Close</button>
+                        </div>
+                        <div className="mt-2 text-sm text-foreground">
+                          Total points: <span className="font-mono ml-1">{points ?? 0}</span>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">Keep solving problems to earn more points!</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             <Button

@@ -28,6 +28,7 @@ export type user = {
   name: string;
   email: string;
   role: string;
+  points_earned?: number;
 };
 
 export type semester = {
