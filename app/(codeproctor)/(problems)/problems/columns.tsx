@@ -158,7 +158,7 @@ export const createColumns = (
               <DropdownMenuItem onClick={handleView}>
                 View Problem
               </DropdownMenuItem>
-              {userRole === "admin" && (
+              {userRole !== "student" && (
                 <>
                   <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
                   <DropdownMenuItem onClick={handleDelete}>
