@@ -3,16 +3,24 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DataTable } from "@/components/data-table";
-import { myCourseColumns } from "./columns";
 import { course } from "@/types/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { createCourseColumns } from "./columns";
 
 export default function MyCoursesPage() {
   const { data: session, status } = useSession();
+  const userRole = session?.user?.role;
   const [courses, setCourses] = useState<course[]>([]);
   const [loading, setLoading] = useState(true);
+  const myCourseColumns = createCourseColumns(userRole ?? "Student");
 
   const fetchMyCourses = async () => {
     if (!session?.user?.id) {
@@ -22,11 +30,11 @@ export default function MyCoursesPage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/users/${session.user.id}/courses`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch courses');
+        throw new Error("Failed to fetch courses");
       }
-      
+
       const data = await response.json();
       setCourses(data.courses || []);
     } catch (error) {

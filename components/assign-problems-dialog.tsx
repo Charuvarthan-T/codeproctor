@@ -16,7 +16,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, Minus, Users, BookOpen, FileText, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Minus,
+  Users,
+  BookOpen,
+  FileText,
+  Trash2,
+} from "lucide-react";
 
 interface Problem {
   id: string;
@@ -50,30 +58,38 @@ export function AssignProblemsDialog({
   const [selectedProblems, setSelectedProblems] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [activeView, setActiveView] = useState<"unassigned" | "assigned" | "create">("unassigned");
-  
+  const [activeView, setActiveView] = useState<
+    "unassigned" | "assigned" | "create"
+  >("unassigned");
+
   // Create problem form state
   const [createForm, setCreateForm] = useState({
     title: "",
     description: "",
   });
-  const [testCases, setTestCases] = useState<TestCase[]>([{ input: "", output: "" }]);
+  const [testCases, setTestCases] = useState<TestCase[]>([
+    { input: "", output: "" },
+  ]);
 
   const fetchProblems = async () => {
     setLoading(true);
     try {
       // Fetch assigned problems
-      const assignedResponse = await fetch(`/api/courses/problems?courseId=${courseId}`);
+      const assignedResponse = await fetch(
+        `/api/courses/problems?courseId=${courseId}`
+      );
       const assignedData = await assignedResponse.json();
-      
+
       // Fetch unassigned problems
-      const unassignedResponse = await fetch(`/api/courses/problems?courseId=${courseId}&action=unassigned`);
+      const unassignedResponse = await fetch(
+        `/api/courses/problems?courseId=${courseId}&action=unassigned`
+      );
       const unassignedData = await unassignedResponse.json();
-      
+
       if (assignedData.success) {
         setAssignedProblems(assignedData.data || []);
       }
-      
+
       if (unassignedData.success) {
         setUnassignedProblems(unassignedData.data || []);
       }
@@ -97,9 +113,9 @@ export function AssignProblemsDialog({
 
   const handleProblemSelection = (problemId: string, checked: boolean) => {
     if (checked) {
-      setSelectedProblems(prev => [...prev, problemId]);
+      setSelectedProblems((prev) => [...prev, problemId]);
     } else {
-      setSelectedProblems(prev => prev.filter(id => id !== problemId));
+      setSelectedProblems((prev) => prev.filter((id) => id !== problemId));
     }
   };
 
@@ -168,8 +184,15 @@ export function AssignProblemsDialog({
     }
   };
 
-  const handleDeleteProblem = async (problemId: string, problemTitle: string) => {
-    if (!confirm(`Are you sure you want to delete the problem "${problemTitle}"? This action cannot be undone.`)) {
+  const handleDeleteProblem = async (
+    problemId: string,
+    problemTitle: string
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete the problem "${problemTitle}"? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
@@ -209,8 +232,12 @@ export function AssignProblemsDialog({
     }
   };
 
-  const updateTestCase = (index: number, field: 'input' | 'output', value: string) => {
-    const updatedTestCases = testCases.map((testCase, i) => 
+  const updateTestCase = (
+    index: number,
+    field: "input" | "output",
+    value: string
+  ) => {
+    const updatedTestCases = testCases.map((testCase, i) =>
       i === index ? { ...testCase, [field]: value } : testCase
     );
     setTestCases(updatedTestCases);
@@ -222,14 +249,16 @@ export function AssignProblemsDialog({
       toast.error("Problem title is required");
       return;
     }
-    
+
     if (!createForm.description.trim()) {
       toast.error("Problem description is required");
       return;
     }
 
     // Validate test cases
-    const validTestCases = testCases.filter(tc => tc.input.trim() && tc.output.trim());
+    const validTestCases = testCases.filter(
+      (tc) => tc.input.trim() && tc.output.trim()
+    );
     if (validTestCases.length === 0) {
       toast.error("At least one valid test case is required");
       return;
@@ -268,20 +297,22 @@ export function AssignProblemsDialog({
     }
   };
 
-  const ProblemCard = ({ 
-    problem, 
-    isAssigned, 
-    showCheckbox 
-  }: { 
-    problem: Problem; 
-    isAssigned: boolean; 
-    showCheckbox: boolean; 
+  const ProblemCard = ({
+    problem,
+    isAssigned,
+    showCheckbox,
+  }: {
+    problem: Problem;
+    isAssigned: boolean;
+    showCheckbox: boolean;
   }) => (
     <div className="flex items-start space-x-3 p-4 border rounded-lg bg-card">
       {showCheckbox && (
         <Checkbox
           checked={selectedProblems.includes(problem.id)}
-          onCheckedChange={(checked) => handleProblemSelection(problem.id, checked as boolean)}
+          onCheckedChange={(checked) =>
+            handleProblemSelection(problem.id, checked as boolean)
+          }
           className="mt-1"
         />
       )}
@@ -289,13 +320,13 @@ export function AssignProblemsDialog({
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-sm font-semibold truncate">{problem.title}</h4>
           <div className="flex items-center space-x-2 ml-2">
-            {problem.type === 'course-specific' && (
+            {problem.type === "course-specific" && (
               <Badge variant="default" className="text-xs">
                 Course-Specific
               </Badge>
             )}
-            {isAssigned && (
-              problem.type === 'course-specific' ? (
+            {isAssigned &&
+              (problem.type === "course-specific" ? (
                 <Button
                   size="sm"
                   variant="destructive"
@@ -315,8 +346,7 @@ export function AssignProblemsDialog({
                 >
                   <Minus className="h-3 w-3" />
                 </Button>
-              )
-            )}
+              ))}
           </div>
         </div>
         <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
@@ -332,11 +362,12 @@ export function AssignProblemsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh]">
+      <DialogContent className="w-60px h-100px">
         <DialogHeader>
-          <DialogTitle>Manage Problems for {courseName}</DialogTitle>
+          <DialogTitle>Manage Problems Dialog</DialogTitle>
           <DialogDescription>
-            Assign existing problems or create course-specific problems with test cases
+            Assign existing problems or create course-specific problems with
+            test cases
           </DialogDescription>
         </DialogHeader>
 
@@ -393,17 +424,24 @@ export function AssignProblemsDialog({
                   <Input
                     id="title"
                     value={createForm.title}
-                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, title: e.target.value })
+                    }
                     placeholder="Enter problem title"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="description">Problem Description *</Label>
                   <Textarea
                     id="description"
                     value={createForm.description}
-                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Describe the problem requirements, constraints, and examples"
                     className="min-h-[100px]"
                   />
@@ -424,12 +462,17 @@ export function AssignProblemsDialog({
                       Add Test Case
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-3 max-h-48 overflow-y-auto">
                     {testCases.map((testCase, index) => (
-                      <div key={index} className="border rounded-lg p-3 bg-muted/20">
+                      <div
+                        key={index}
+                        className="border rounded-lg p-3 bg-muted/20"
+                      >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Test Case {index + 1}</span>
+                          <span className="text-sm font-medium">
+                            Test Case {index + 1}
+                          </span>
                           {testCases.length > 1 && (
                             <Button
                               type="button"
@@ -447,7 +490,9 @@ export function AssignProblemsDialog({
                             <Label className="text-xs">Input</Label>
                             <Textarea
                               value={testCase.input}
-                              onChange={(e) => updateTestCase(index, 'input', e.target.value)}
+                              onChange={(e) =>
+                                updateTestCase(index, "input", e.target.value)
+                              }
                               placeholder="Test input"
                               className="h-20 text-xs"
                             />
@@ -456,7 +501,9 @@ export function AssignProblemsDialog({
                             <Label className="text-xs">Expected Output</Label>
                             <Textarea
                               value={testCase.output}
-                              onChange={(e) => updateTestCase(index, 'output', e.target.value)}
+                              onChange={(e) =>
+                                updateTestCase(index, "output", e.target.value)
+                              }
                               placeholder="Expected output"
                               className="h-20 text-xs"
                             />
@@ -489,24 +536,22 @@ export function AssignProblemsDialog({
                       />
                     ))
                   )
+                ) : assignedProblems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">
+                      No problems assigned to this course yet
+                    </p>
+                  </div>
                 ) : (
-                  assignedProblems.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">
-                        No problems assigned to this course yet
-                      </p>
-                    </div>
-                  ) : (
-                    assignedProblems.map((problem) => (
-                      <ProblemCard
-                        key={problem.id}
-                        problem={problem}
-                        isAssigned={true}
-                        showCheckbox={false}
-                      />
-                    ))
-                  )
+                  assignedProblems.map((problem) => (
+                    <ProblemCard
+                      key={problem.id}
+                      problem={problem}
+                      isAssigned={true}
+                      showCheckbox={false}
+                    />
+                  ))
                 )}
               </div>
             </div>
@@ -545,10 +590,7 @@ export function AssignProblemsDialog({
               </Button>
             )}
             {activeView === "create" && (
-              <Button
-                onClick={handleCreateProblem}
-                disabled={submitting}
-              >
+              <Button onClick={handleCreateProblem} disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

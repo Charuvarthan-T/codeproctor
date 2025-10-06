@@ -69,6 +69,8 @@ export type problem = {
   };
   // Template type for common problem patterns
   template_type?: string;
+  // Submission status for the current user
+  solved_status?: "solved" | "attempted" | "unsolved";
 };
 
 export type testCase = {
