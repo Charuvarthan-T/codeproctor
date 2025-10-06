@@ -279,22 +279,6 @@ export default function Page() {
               </Select>
             </div>
 
-            <div className="grid gap-3">
-              <Select onValueChange={setSelectedDepartment}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {departments.map((department) => (
-                      <SelectItem key={department.id} value={department.id}>
-                        {department.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="grid gap-3">
               <Select onValueChange={setSelectedSemester}>
@@ -352,30 +336,7 @@ export default function Page() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-department" className="text-right">
-                Department
-              </Label>
-              <Select
-                value={editSection?.departmentid || ""}
-                onValueChange={(value) =>
-                  setEditSection((prev: any) =>
-                    prev ? { ...prev, departmentid: value } : null
-                  )
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="edit-semester" className="text-right">
                 Semester
