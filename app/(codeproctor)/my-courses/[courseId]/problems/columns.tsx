@@ -168,7 +168,7 @@ export const createCourseProblemColumns = (
           return (
             <Badge
               variant="default"
-              className="bg-green-500 hover:bg-green-600"
+              className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
             >
               Solved
             </Badge>
@@ -177,7 +177,7 @@ export const createCourseProblemColumns = (
           return (
             <Badge
               variant="secondary"
-              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+              className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
             >
               Attempted
             </Badge>

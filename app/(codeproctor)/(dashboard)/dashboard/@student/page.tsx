@@ -61,32 +61,26 @@ const quickActions = [
     description: "Explore and solve coding problems",
     href: "/problems",
     icon: FileText,
-    color: "bg-blue-500",
+    iconColor: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
   },
   {
     title: "My Courses",
     description: "View your enrolled courses",
     href: "/my-courses",
     icon: BookOpen,
-    color: "bg-green-500",
+    iconColor: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
   },
   {
     title: "Code Editor",
     description: "Practice coding and test solutions",
     href: "/editor",
     icon: GraduationCap,
-    color: "bg-purple-500",
+    iconColor: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-950/20",
   },
 ];
-
-const getProgressColor = (solved: number, total: number) => {
-  if (total === 0) return "bg-gray-200";
-  const percentage = (solved / total) * 100;
-  if (percentage >= 80) return "bg-green-500";
-  if (percentage >= 60) return "bg-blue-500";
-  if (percentage >= 40) return "bg-yellow-500";
-  return "bg-red-500";
-};
 
 export default function StudentDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -232,11 +226,6 @@ export default function StudentDashboard() {
                     <div className="text-2xl font-bold">
                       {stat.value.toLocaleString()}
                     </div>
-                    {stat.title === "Problems Solved" && (
-                      <p className="text-xs text-muted-foreground">
-                        {solveRate}% solve rate
-                      </p>
-                    )}
                   </CardContent>
                 </Card>
               );
@@ -297,8 +286,8 @@ export default function StudentDashboard() {
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <div className="p-2 rounded-lg bg-green-500 bg-opacity-10">
-                        <BookOpen className="h-6 w-6 text-green-500" />
+                      <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/20">
+                        <BookOpen className="h-6 w-6 text-green-600" />
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                     </div>
@@ -349,14 +338,9 @@ export default function StudentDashboard() {
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div
-                      className={`p-2 rounded-lg ${action.color} bg-opacity-10`}
-                    >
+                    <div className={`p-2 rounded-lg ${action.bgColor}`}>
                       <IconComponent
-                        className={`h-6 w-6 ${action.color.replace(
-                          "bg-",
-                          "text-"
-                        )}`}
+                        className={`h-6 w-6 ${action.iconColor}`}
                       />
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />

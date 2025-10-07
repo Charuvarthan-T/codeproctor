@@ -39,42 +39,48 @@ const adminPages = [
     description: "View and manage all users in the system",
     href: "/users",
     icon: Users,
-    color: "bg-blue-500",
+    iconColor: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
   },
   {
     title: "Manage Courses",
     description: "Create and manage course offerings",
     href: "/courses",
     icon: BookOpen,
-    color: "bg-green-500",
+    iconColor: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
   },
   {
     title: "Manage Departments",
     description: "Organize academic departments",
     href: "/departments",
     icon: Building2,
-    color: "bg-purple-500",
+    iconColor: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-950/20",
   },
   {
     title: "Manage Semesters",
     description: "Set up academic terms and schedules",
     href: "/semesters",
     icon: Calendar,
-    color: "bg-orange-500",
+    iconColor: "text-orange-600",
+    bgColor: "bg-orange-50 dark:bg-orange-950/20",
   },
   {
     title: "Manage Sections",
     description: "Configure course sections and enrollments",
     href: "/sections",
     icon: Layout,
-    color: "bg-indigo-500",
+    iconColor: "text-indigo-600",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/20",
   },
   {
     title: "View Problems",
     description: "Browse and manage coding problems",
     href: "/problems",
     icon: FileText,
-    color: "bg-red-500",
+    iconColor: "text-red-600",
+    bgColor: "bg-red-50 dark:bg-red-950/20",
   },
 ];
 
@@ -204,15 +210,8 @@ export default function AdminDashboard() {
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div
-                      className={`p-2 rounded-lg ${page.color} bg-opacity-10`}
-                    >
-                      <IconComponent
-                        className={`h-6 w-6 ${page.color.replace(
-                          "bg-",
-                          "text-"
-                        )}`}
-                      />
+                    <div className={`p-2 rounded-lg ${page.bgColor}`}>
+                      <IconComponent className={`h-6 w-6 ${page.iconColor}`} />
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                   </div>

@@ -47,7 +47,10 @@ export async function assignUserToSection(sectionid: string, userid: string) {
 }
 
 // Unassign a user from a section
-export async function unassignUserFromSection(sectionid: string, userid: string) {
+export async function unassignUserFromSection(
+  sectionid: string,
+  userid: string
+) {
   try {
     await sql`
       DELETE FROM sections_users 
@@ -60,36 +63,35 @@ export async function unassignUserFromSection(sectionid: string, userid: string)
   }
 }
 
-export interface createSectionType{
-    name: string;
-    semesterid: string;
-    departmentid: string;
+export interface createSectionType {
+  name: string;
+  semesterid: string;
+  departmentid: string;
+  isactive?: boolean;
 }
 
-export async function createSection(newSection: createSectionType){
-    try{
-        await sql`INSERT INTO sections (name, semesterid)
-        VALUES(${newSection.name}, ${newSection.semesterid})`
-        return true;
-    }
-    catch(e){
-        console.log(e);
-        return false;
-    }
+export async function createSection(newSection: createSectionType) {
+  try {
+    await sql`INSERT INTO sections (name, semesterid, isactive)
+        VALUES (${newSection.name}, ${newSection.semesterid}, ${newSection.isactive})`;
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
 }
 
-export async function getAllSections(){
-    try{
-        const sections = await sql`SELECT DISTINCT sections.name as section_name, semesters.name as semester_name, departments.name as department_name, sections.isactive as is_active 
+export async function getAllSections() {
+  try {
+    const sections =
+      await sql`SELECT DISTINCT sections.name as section_name, semesters.name as semester_name, sections.isactive as is_active 
         FROM sections
-        INNER JOIN semesters ON sections.semesterid = semesters.id
-        INNER JOIN departments ON sections.departmentid = departments.id`;
-        return {status: true, data: sections};
-    }
-    catch(e){
-        console.log(e);
-        return {status: false, error: e};
-    }
+        INNER JOIN semesters ON sections.semesterid = semesters.id`;
+    return { status: true, data: sections };
+  } catch (e) {
+    console.log(e);
+    return { status: false, error: e };
+  }
 }
 
 export async function getSectionsWithPagination(
@@ -101,17 +103,18 @@ export async function getSectionsWithPagination(
 ) {
   try {
     const offset = (page - 1) * pageSize;
-    
-    const allowedSortColumns = ["section_name", "semester_name", "department_name", "is_active"];
-    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "section_name";
+
+    const allowedSortColumns = ["section_name", "semester_name", "is_active"];
+    const safeSortBy = allowedSortColumns.includes(sortBy)
+      ? sortBy
+      : "section_name";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
 
     let sections, totalResult;
 
     if (search) {
-
       const searchPattern = `%${search}%`;
-      
+
       sections = await sql`
         SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, sections.isactive as is_active
         FROM sections
@@ -130,11 +133,10 @@ export async function getSectionsWithPagination(
            OR semesters.name ILIKE ${searchPattern} 
       `;
     } else {
-
       sections = await sql`
         SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, 
                sections.isactive as is_active,
-               sections.semesterid, sections.departmentid
+               sections.semesterid
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
         ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
@@ -155,7 +157,7 @@ export async function getSectionsWithPagination(
       total,
       page,
       pageSize,
-      totalPages: Math.ceil(total / pageSize)
+      totalPages: Math.ceil(total / pageSize),
     };
   } catch (error) {
     console.error("Error getting paginated sections:", error);
@@ -163,28 +165,26 @@ export async function getSectionsWithPagination(
   }
 }
 
-export async function editSection(newSection: section){
-    try{
-        await sql`UPDATE sections
-        SET name = ${newSection.name}, semesterid = ${newSection.semesterid}, departmentid = ${newSection.departmentid}, isactive = ${newSection.isactive}
+export async function editSection(newSection: section) {
+  try {
+    await sql`UPDATE sections
+        SET name = ${newSection.name}, semesterid = ${newSection.semesterid}, isactive = ${newSection.isactive}
         WHERE id = ${newSection.id}`;
-        return true;
-    }
-    catch(e){
-        console.log(e);
-        return false;
-    }
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
 }
 
-export async function deleteSection(id: string){
-    try{
-        await sql`DELETE FROM sections WHERE id = ${id}`;
-        return true;
-    }
-    catch(e){
-        console.log(e);
-        return false;
-    }
+export async function deleteSection(id: string) {
+  try {
+    await sql`DELETE FROM sections WHERE id = ${id}`;
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
 }
 
 export async function getCoursesForSection(sectionid: string) {
@@ -207,7 +207,10 @@ export async function getCoursesForSection(sectionid: string) {
   }
 }
 
-export async function getAssignedFacultyForACourse(courseid: string, sectionid: string) {
+export async function getAssignedFacultyForACourse(
+  courseid: string,
+  sectionid: string
+) {
   try {
     const faculty = await sql`
       SELECT u.id, u.name, u.email
@@ -225,7 +228,6 @@ export async function getAssignedFacultyForACourse(courseid: string, sectionid: 
 // Get available faculty for a specific course-section combination
 export async function getAvailableFaculty(courseid: string, sectionid: string) {
   try {
-      
     const faculty = await sql`
       SELECT u.id, u.name, u.email
       FROM users u
@@ -238,7 +240,7 @@ export async function getAvailableFaculty(courseid: string, sectionid: string) {
         )
       ORDER BY u.name
     `;
-    
+
     return { status: true, data: faculty };
   } catch (e) {
     console.log(e);
@@ -247,7 +249,11 @@ export async function getAvailableFaculty(courseid: string, sectionid: string) {
 }
 
 // Assign faculty to a course-section combination
-export async function assignFacultyToCourse(courseid: string, sectionid: string, userid: string) {
+export async function assignFacultyToCourse(
+  courseid: string,
+  sectionid: string,
+  userid: string
+) {
   try {
     await sql`
       INSERT INTO faculty_courses_section (courseid, sectionid, userid)
@@ -261,7 +267,11 @@ export async function assignFacultyToCourse(courseid: string, sectionid: string,
 }
 
 // Remove faculty assignment from a course-section combination
-export async function removeFacultyFromCourse(courseid: string, sectionid: string, userid: string) {
+export async function removeFacultyFromCourse(
+  courseid: string,
+  sectionid: string,
+  userid: string
+) {
   try {
     await sql`
       DELETE FROM faculty_courses_section 

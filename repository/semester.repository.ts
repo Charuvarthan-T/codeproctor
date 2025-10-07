@@ -146,3 +146,20 @@ export async function getCoursesByUserId(userId: string) {
     return { status: false, error: e };
   }
 }
+
+
+export async function getSemesterById(semesterid: string){
+  try{
+    const semester = await sql`
+    SELECT *
+    FROM semesters s
+    WHERE s.id = ${semesterid};
+    `
+
+    return semester;
+  }
+  catch(e){
+    console.log(e);
+    return {status: false, error:e};
+  }
+}

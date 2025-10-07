@@ -25,6 +25,7 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Switch } from "@/components/ui/switch";
 
 export default function Page() {
   const [sections, setSections] = useState([]);
@@ -50,6 +51,8 @@ export default function Page() {
   const [editLoading, setEditLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [sectionToDelete, setSectionToDelete] = useState<any>(null);
+
+  const [isActive, setIsActive] = useState(true);
 
   const router = useRouter();
 
@@ -116,6 +119,7 @@ export default function Page() {
       name: selectedSection,
       semesterid: selectedSemester,
       departmentid: selectedDepartment,
+      isactive: isActive,
     };
 
     const response = await fetch("/api/sections", {
@@ -140,7 +144,6 @@ export default function Page() {
   async function handleEditSection(): Promise<void> {
     if (
       !editSection?.section_name.trim() ||
-      !editSection?.departmentid ||
       !editSection?.semesterid
     ) {
       toast.error("Please fill in all required fields");
@@ -279,7 +282,6 @@ export default function Page() {
               </Select>
             </div>
 
-
             <div className="grid gap-3">
               <Select onValueChange={setSelectedSemester}>
                 <SelectTrigger>
@@ -295,6 +297,11 @@ export default function Page() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex gap-3">
+              <label htmlFor="is-active">Is Active</label>
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
             </div>
 
             <Button variant="outline" onClick={handleCreateSection}>
@@ -360,6 +367,21 @@ export default function Page() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-is-active" className="text-right">
+                Is Active
+              </Label>
+              <Switch
+                id="edit-is-active"
+                checked={editSection?.is_active || false}
+                onCheckedChange={(value) =>
+                  setEditSection((prev: any) =>
+                    prev ? { ...prev, is_active: value } : null
+                  )
+                }
+              />
             </div>
           </div>
           <DialogFooter>

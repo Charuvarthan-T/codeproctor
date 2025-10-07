@@ -57,21 +57,24 @@ const quickActions = [
     description: "Browse and manage coding problems",
     href: "/problems",
     icon: FileText,
-    color: "bg-blue-500",
+    iconColor: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
   },
   {
     title: "My Courses",
     description: "Manage your assigned courses",
     href: "/my-courses",
     icon: BookOpen,
-    color: "bg-green-500",
+    iconColor: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
   },
   {
     title: "Code Editor",
     description: "Test and create code solutions",
     href: "/editor",
     icon: GraduationCap,
-    color: "bg-purple-500",
+    iconColor: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-950/20",
   },
 ];
 
@@ -268,8 +271,8 @@ export default function FacultyDashboard() {
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="p-2 rounded-lg bg-blue-500 bg-opacity-10">
-                      <BookOpen className="h-6 w-6 text-blue-500" />
+                    <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                      <BookOpen className="h-6 w-6 text-blue-600" />
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                   </div>
@@ -281,7 +284,12 @@ export default function FacultyDashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0 space-y-2">
-                  <Button asChild className="w-full" variant="outline" size="sm">
+                  <Button
+                    asChild
+                    className="w-full"
+                    variant="outline"
+                    size="sm"
+                  >
                     <Link
                       href={`/my-courses/${course.id}/problems`}
                       className="flex items-center gap-2"
@@ -314,14 +322,9 @@ export default function FacultyDashboard() {
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div
-                      className={`p-2 rounded-lg ${action.color} bg-opacity-10`}
-                    >
+                    <div className={`p-2 rounded-lg ${action.bgColor}`}>
                       <IconComponent
-                        className={`h-6 w-6 ${action.color.replace(
-                          "bg-",
-                          "text-"
-                        )}`}
+                        className={`h-6 w-6 ${action.iconColor}`}
                       />
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />

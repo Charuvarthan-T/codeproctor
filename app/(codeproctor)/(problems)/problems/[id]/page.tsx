@@ -8,7 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuContent,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Editor from "@monaco-editor/react";
 import { ChevronDown, Loader2 } from "lucide-react";
@@ -47,7 +47,7 @@ export default function Page() {
   const [isRunningTests, setIsRunningTests] = useState(false);
   const [showTestCases, setShowTestCases] = useState(true);
   const [selectedTestCase, setSelectedTestCase] = useState(0);
-  const [templates, setTemplates] = useState<{[key: string]: string}>({});
+  const [templates, setTemplates] = useState<{ [key: string]: string }>({});
 
   // end of test case logic
 
@@ -59,7 +59,9 @@ export default function Page() {
     const apiUrl = process.env.NEXT_PUBLIC_JUDGE0_API_URL;
 
     if (!apiUrl) {
-      setOutput("❌ API configuration missing. Please check your environment variables.");
+      setOutput(
+        "❌ API configuration missing. Please check your environment variables."
+      );
       setIsLoading(false);
       setIsRunningTests(false);
       return;
@@ -83,7 +85,7 @@ export default function Page() {
 
         const response = await fetch(url, options);
         const result = await response.json();
-        
+
         if (result.compile_output) {
           setOutput(`❌ Compilation Error:\n${result.compile_output}`);
         } else if (result.stderr) {
@@ -125,7 +127,9 @@ export default function Page() {
 
           // Handle runtime errors
           if (result.stderr && !result.stdout) {
-            setOutput(`❌ Runtime Error on Test Case ${i + 1}:\n${result.stderr}`);
+            setOutput(
+              `❌ Runtime Error on Test Case ${i + 1}:\n${result.stderr}`
+            );
             runtimeError = true;
             break;
           }
@@ -141,26 +145,26 @@ export default function Page() {
             input: testCase.input,
             expectedOutput: expectedOutput,
             actualOutput: actualOutput,
-            passed: passed
+            passed: passed,
           });
         }
 
         // Only set results if no compilation/runtime errors
         if (!compilationError && !runtimeError) {
           setTestResults(results);
-          const passedCount = results.filter(r => r.passed).length;
-          
+          const passedCount = results.filter((r) => r.passed).length;
+
           if (allTestsPassed) {
             // Award points (100) and update UI
             try {
               // call award-points API first (so the award write occurs even if marking completed has issues)
               const awardRes = await fetch(`/api/problems/${id}/award-points`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ points: 100 }),
               });
 
-              let pointsLine = '';
+              let pointsLine = "";
               let awardedOk = false;
               if (awardRes.ok) {
                 const data = await awardRes.json();
@@ -168,15 +172,21 @@ export default function Page() {
                   awardedOk = true;
                   // show awarded points and total
                   pointsLine = `\n\nPoints score: 100`;
-                  if (data.totalPoints) pointsLine += `\nTotal points: ${data.totalPoints}`;
+                  if (data.totalPoints)
+                    pointsLine += `\nTotal points: ${data.totalPoints}`;
                 } else {
                   // Not awarded because already solved; show total if provided
-                  if (data.totalPoints) pointsLine = `\n\nPoints total: ${data.totalPoints}`;
+                  if (data.totalPoints)
+                    pointsLine = `\n\nPoints total: ${data.totalPoints}`;
                 }
                 // Broadcast the updated totalPoints so other UI (header) can refresh immediately
                 try {
-                  if (data && typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { totalPoints: data.totalPoints } }));
+                  if (data && typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("pointsUpdated", {
+                        detail: { totalPoints: data.totalPoints },
+                      })
+                    );
                   }
                 } catch (e) {
                   /* ignore in non-browser env */
@@ -187,19 +197,34 @@ export default function Page() {
               try {
                 await handleSwitchChange(true);
               } catch (e) {
-                console.warn('Failed to mark completed after awarding points:', e);
+                console.warn(
+                  "Failed to mark completed after awarding points:",
+                  e
+                );
               }
 
-              setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0${pointsLine}`);
+              setOutput(
+                `🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0${pointsLine}`
+              );
             } catch (e) {
-              console.error('Error awarding points:', e);
+              console.error("Error awarding points:", e);
               // still mark as solved if award failed to ensure progress tracking
-              try { await handleSwitchChange(true); } catch (_) {}
-              setOutput(`🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0\n\nPoints score: (failed to award)`);
+              try {
+                await handleSwitchChange(true);
+              } catch (_) {}
+              setOutput(
+                `🎉 Accepted!\n\nAll test cases passed (${passedCount}/${results.length})\n\nRuntime: Judge0\nMemory: Judge0\n\nPoints score: (failed to award)`
+              );
             }
           } else {
-            const firstFailedIndex = results.findIndex(r => !r.passed);
-            setOutput(`❌ Wrong Answer\n\nTest case ${firstFailedIndex + 1} failed\nPassed: ${passedCount}/${results.length}\n\nSee test cases below for details.`);
+            const firstFailedIndex = results.findIndex((r) => !r.passed);
+            setOutput(
+              `❌ Wrong Answer\n\nTest case ${
+                firstFailedIndex + 1
+              } failed\nPassed: ${passedCount}/${
+                results.length
+              }\n\nSee test cases below for details.`
+            );
             // Auto-select the first failed test case
             setSelectedTestCase(firstFailedIndex);
           }
@@ -268,12 +293,12 @@ export default function Page() {
       console.log("Fetching templates for problem:", id);
       const response = await fetch(`/api/problems/${id}/template`);
       console.log("Template response status:", response.status);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log("Template data received:", data);
-        
-        if (data.templates && typeof data.templates === 'object') {
+
+        if (data.templates && typeof data.templates === "object") {
           console.log("Setting templates:", data.templates);
           setTemplates(data.templates);
         } else if (data.templates === null) {
@@ -295,19 +320,17 @@ export default function Page() {
     }
   }
 
-
-
   // LeetCode-style clean user templates (what users see and edit)
   const getUserTemplate = (lang: string): string => {
     console.log("=== Getting template for language:", lang, "===");
     console.log("Available templates object:", templates);
     console.log("Template keys:", Object.keys(templates || {}));
-    
+
     // First priority: Check if we have a template from the database
-    if (templates && typeof templates === 'object' && templates[lang]) {
+    if (templates && typeof templates === "object" && templates[lang]) {
       const dbTemplate = templates[lang];
       console.log("Database template for", lang, ":", dbTemplate);
-      if (dbTemplate && dbTemplate.trim() !== '') {
+      if (dbTemplate && dbTemplate.trim() !== "") {
         console.log("✅ USING DATABASE TEMPLATE for", lang);
         return dbTemplate;
       } else {
@@ -318,15 +341,22 @@ export default function Page() {
       console.log("Templates type:", typeof templates);
       console.log("Templates value:", templates);
     }
-    
-    // Second priority: If problem has custom function signatures, use them
-    if (problem.function_signatures && problem.function_signatures[lang as keyof typeof problem.function_signatures]) {
-      console.log("✅ Using function signature template for", lang);
-      return problem.function_signatures[lang as keyof typeof problem.function_signatures] || getCleanTemplate(lang);
-    }
-    
 
-    
+    // Second priority: If problem has custom function signatures, use them
+    if (
+      problem.function_signatures &&
+      problem.function_signatures[
+        lang as keyof typeof problem.function_signatures
+      ]
+    ) {
+      console.log("✅ Using function signature template for", lang);
+      return (
+        problem.function_signatures[
+          lang as keyof typeof problem.function_signatures
+        ] || getCleanTemplate(lang)
+      );
+    }
+
     // Fall back to clean template (what users see)
     console.log("⚠️ Using fallback template for", lang);
     const fallback = getCleanTemplate(lang);
@@ -506,7 +536,7 @@ int main() {
       ":",
       template.substring(0, 50) + "..."
     );
-    
+
     // FORCE update the code every time language or templates change
     setCode(template);
   }, [language, templates]);
@@ -603,8 +633,8 @@ int main() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 onClick={handleClick}
                 disabled={isLoading || isRunningTests}
                 className="bg-green-600 hover:bg-green-700 text-white"
@@ -618,7 +648,10 @@ int main() {
                   <>
                     ▶ Run
                     {testCases.length > 0 && (
-                      <Badge variant="secondary" className="ml-2 bg-green-100 text-green-800 text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 bg-green-100 text-green-800 text-xs"
+                      >
                         {testCases.length}
                       </Badge>
                     )}
@@ -629,7 +662,10 @@ int main() {
           </div>
 
           {/* Monaco Editor */}
-          <div className="rounded-lg border overflow-hidden mb-2" style={{ height: '45vh' }}>
+          <div
+            className="rounded-lg border overflow-hidden mb-2"
+            style={{ height: "45vh" }}
+          >
             <Editor
               height="100%"
               language={getMonacoLanguage(language)}
@@ -659,35 +695,37 @@ int main() {
                   </div>
                 )}
               </div>
-              
+
               <div className="bg-gray-900 dark:bg-gray-950 rounded-md p-3 font-mono text-xs min-h-[80px] border border-gray-200 dark:border-gray-800">
                 {!isLoading && !output && (
-                  <span className="text-gray-500">Click "Run" to see output</span>
+                  <span className="text-gray-500">
+                    Click "Run" to see output
+                  </span>
                 )}
                 {output && (
                   <div className="text-gray-100">
                     {/* Enhanced output formatting based on result type */}
-                    {output.includes('🎉 Accepted') && (
+                    {output.includes("🎉 Accepted") && (
                       <div className="text-green-400">
                         <pre className="whitespace-pre-wrap">{output}</pre>
                       </div>
                     )}
-                    {output.includes('❌ Wrong Answer') && (
+                    {output.includes("❌ Wrong Answer") && (
                       <div className="text-red-400">
                         <pre className="whitespace-pre-wrap">{output}</pre>
                       </div>
                     )}
-                    {output.includes('❌ Compilation Error') && (
+                    {output.includes("❌ Compilation Error") && (
                       <div className="text-yellow-400">
                         <pre className="whitespace-pre-wrap">{output}</pre>
                       </div>
                     )}
-                    {output.includes('❌ Runtime Error') && (
+                    {output.includes("❌ Runtime Error") && (
                       <div className="text-orange-400">
                         <pre className="whitespace-pre-wrap">{output}</pre>
                       </div>
                     )}
-                    {!output.includes('🎉') && !output.includes('❌') && (
+                    {!output.includes("🎉") && !output.includes("❌") && (
                       <div className="text-gray-100">
                         <pre className="whitespace-pre-wrap">{output}</pre>
                       </div>
@@ -703,35 +741,44 @@ int main() {
                 <div className="flex flex-col h-full">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-foreground">Test Cases</h3>
+                    <h3 className="text-sm font-medium text-foreground">
+                      Test Cases
+                    </h3>
                     <Badge variant="secondary" className="text-xs h-5">
-                      {testResults.length > 0 
-                        ? `${testResults.filter(r => r.passed).length}/${testResults.length} passed`
-                        : `${testCases.length} cases`
-                      }
+                      {testResults.length > 0
+                        ? `${testResults.filter((r) => r.passed).length}/${
+                            testResults.length
+                          } passed`
+                        : `${testCases.length} cases`}
                     </Badge>
                   </div>
 
                   {/* Test Case Tabs */}
                   <div className="flex gap-1 border-b mb-3">
                     {testCases.map((testCase, index) => {
-                      const result = testResults.find(r => r.testCaseId === testCase.id);
+                      const result = testResults.find(
+                        (r) => r.testCaseId === testCase.id
+                      );
                       return (
                         <button
                           key={testCase.id}
                           onClick={() => setSelectedTestCase(index)}
                           className={`px-3 py-1.5 text-xs font-medium rounded-t-md border-b-2 transition-colors ${
                             selectedTestCase === index
-                              ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
                           }`}
                         >
                           <div className="flex items-center gap-1.5">
                             Case {index + 1}
                             {result && (
-                              <div className={`w-2 h-2 rounded-full ${
-                                result.passed ? 'bg-green-500' : 'bg-red-500'
-                              }`} />
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  result.passed
+                                    ? "bg-green-600 dark:bg-green-500"
+                                    : "bg-red-600 dark:bg-red-500"
+                                }`}
+                              />
                             )}
                           </div>
                         </button>
@@ -767,7 +814,10 @@ int main() {
 
                         {/* Actual Output (only show if test was run and failed) */}
                         {(() => {
-                          const result = testResults.find(r => r.testCaseId === testCases[selectedTestCase].id);
+                          const result = testResults.find(
+                            (r) =>
+                              r.testCaseId === testCases[selectedTestCase].id
+                          );
                           if (result && !result.passed) {
                             return (
                               <div>
@@ -785,20 +835,33 @@ int main() {
 
                         {/* Enhanced Result Status with LeetCode-style feedback */}
                         {(() => {
-                          const result = testResults.find(r => r.testCaseId === testCases[selectedTestCase].id);
+                          const result = testResults.find(
+                            (r) =>
+                              r.testCaseId === testCases[selectedTestCase].id
+                          );
                           if (result) {
                             return (
-                              <div className={`p-3 rounded-md border ${
-                                result.passed 
-                                  ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800' 
-                                  : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-                              }`}>
+                              <div
+                                className={`p-3 rounded-md border ${
+                                  result.passed
+                                    ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800"
+                                    : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+                                }`}
+                              >
                                 <div className="flex items-center gap-2 mb-2">
                                   {result.passed ? (
                                     <div className="flex items-center gap-2">
-                                      <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                      <div className="w-4 h-4 rounded-full bg-green-600 dark:bg-green-500 flex items-center justify-center">
+                                        <svg
+                                          className="w-2.5 h-2.5 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                            clipRule="evenodd"
+                                          />
                                         </svg>
                                       </div>
                                       <span className="text-sm font-medium text-green-700 dark:text-green-300">
@@ -807,9 +870,17 @@ int main() {
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-2">
-                                      <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
-                                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                      <div className="w-4 h-4 rounded-full bg-red-600 dark:bg-red-500 flex items-center justify-center">
+                                        <svg
+                                          className="w-2.5 h-2.5 text-white"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clipRule="evenodd"
+                                          />
                                         </svg>
                                       </div>
                                       <span className="text-sm font-medium text-red-700 dark:text-red-300">
@@ -818,14 +889,20 @@ int main() {
                                     </div>
                                   )}
                                 </div>
-                                
+
                                 {!result.passed && (
                                   <div className="text-xs text-muted-foreground">
                                     <div className="mb-1">
-                                      <span className="font-medium">Expected:</span> "{result.expectedOutput}"
+                                      <span className="font-medium">
+                                        Expected:
+                                      </span>{" "}
+                                      "{result.expectedOutput}"
                                     </div>
                                     <div>
-                                      <span className="font-medium">Your output:</span> "{result.actualOutput}"
+                                      <span className="font-medium">
+                                        Your output:
+                                      </span>{" "}
+                                      "{result.actualOutput}"
                                     </div>
                                   </div>
                                 )}

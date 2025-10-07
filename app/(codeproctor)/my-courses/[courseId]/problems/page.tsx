@@ -118,7 +118,7 @@ export default function CourseProblemsPage() {
               <div className="flex items-center gap-2">
                 <Badge
                   variant="default"
-                  className="bg-green-500 hover:bg-green-600"
+                  className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
                 >
                   {solvedCount} Solved
                 </Badge>

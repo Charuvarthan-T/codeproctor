@@ -64,10 +64,10 @@ export default function SemesterCoursesPage() {
     setLoading(true);
     try {
       // Fetch semester details
-      const semesterResponse = await fetch(`/api/semesters?id=${semesterId}`);
+      const semesterResponse = await fetch(`/api/semesters/${semesterId}`);
       if (semesterResponse.ok) {
         const semesterData = await semesterResponse.json();
-        setSemester(semesterData);
+        setSemester(semesterData[0]);
       }
 
       // Fetch assigned courses for this semester
