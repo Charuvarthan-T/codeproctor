@@ -80,3 +80,20 @@ export type testCase = {
   output: string;
   created_at?: string;
 };
+
+export type contest = {
+  id: string;
+  title: string;
+  description?: string | null;
+  created_by: string;
+  created_by_name?: string;
+  start_time: Date | string;
+  end_time: Date | string;
+  duration_minutes?: number | null;
+  is_active: boolean;
+  created_at?: Date | string;
+  updated_at?: Date | string;
+  problem_count?: number;
+  section_count?: number;
+  solved_count?: number;
+};

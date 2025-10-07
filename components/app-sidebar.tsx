@@ -8,6 +8,7 @@ import {
   Building,
   Presentation,
   Code,
+  Trophy,
 } from "lucide-react";
 import {
   SidebarContent,
@@ -45,6 +46,12 @@ const sidebarItems: SidebarItem[] = [
     label: "Problems",
     href: "/problems",
     icon: BookOpen,
+    role: ["admin", "faculty", "student"],
+  },
+  {
+    label: "Contests",
+    href: "/contests",
+    icon: Trophy,
     role: ["admin", "faculty", "student"],
   },
   {

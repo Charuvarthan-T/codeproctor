@@ -21,7 +21,7 @@ export async function GET() {
             FROM sections_users su
             JOIN sections s ON su.sectionid = s.id
             JOIN semesters sm ON s.semesterid = sm.id
-            JOIN departments d ON s.departmentid = d.id
+            LEFT JOIN departments d ON sm.dept_id = d.id
             WHERE su.userid = ${user.id}
             LIMIT 1
         `;
