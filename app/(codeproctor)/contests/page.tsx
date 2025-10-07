@@ -420,13 +420,6 @@ export default function ContestsPage() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span>{contest.problem_count || 0} problems</span>
                         </div>
-                        <Button
-                          variant="outline"
-                          className="w-full mt-2"
-                          onClick={() => router.push(`/contests/${contest.id}`)}
-                        >
-                          View Details
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
