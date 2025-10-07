@@ -177,7 +177,7 @@ export async function createContest(contest: CreateContestDTO) {
 
 // Update contest
 export async function updateContest(id: string, updates: UpdateContestDTO) {
-  try {
+  try { 
     const setParts: any[] = [];
 
     if (updates.title !== undefined) {

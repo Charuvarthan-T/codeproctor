@@ -37,14 +37,8 @@ export async function GET() {
 
     // Get total available problems in student's courses
     const availableProblems = await sql`
-            SELECT COUNT(DISTINCT p.id) as total_available
-            FROM sections_users su
-            JOIN sections s ON su.sectionid = s.id
-            JOIN semesters sm ON s.semesterid = sm.id
-            JOIN semesters_courses sc ON sm.id = sc.sem_id
-            JOIN problems_courses pc ON sc.course_id = pc.courseid
-            JOIN problems p ON pc.problemid = p.id
-            WHERE su.userid = ${user.id}
+            SELECT COUNT(*) as total_available
+            FROM problems;
         `;
 
     // Get course progress for each enrolled course
