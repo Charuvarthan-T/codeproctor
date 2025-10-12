@@ -26,9 +26,10 @@ export async function getSemestersWithPagination(
   try {
     const offset = (page - 1) * pageSize;
 
-    const allowedSortColumns = ["id", "name", "year"];
-    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
-    const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const allowedSortColumns = ["id", "name", "year"];
+  const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
+  const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const safeSortExpr = safeSortBy === 'name' ? 'LOWER(s.name)' : `s.${safeSortBy}`;
 
     let semesters, totalResult;
 
@@ -40,7 +41,7 @@ export async function getSemestersWithPagination(
         FROM semesters s 
         LEFT JOIN departments d ON s.dept_id = d.id
         WHERE s.name ILIKE ${searchPattern} OR s.year::text ILIKE ${searchPattern} OR d.name ILIKE ${searchPattern}
-        ORDER BY s.${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -54,7 +55,7 @@ export async function getSemestersWithPagination(
         SELECT s.id, s.name, s.year, s.dept_id, d.name as department_name 
         FROM semesters s 
         LEFT JOIN departments d ON s.dept_id = d.id
-        ORDER BY s.${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 

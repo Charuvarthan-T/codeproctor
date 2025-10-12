@@ -69,7 +69,7 @@ export default function ContestsPage() {
       if (!response.ok) throw new Error("Failed to fetch contests");
       const data = await response.json();
       console.log("Contests received:", data);
-      setContests(data.contests || []);
+      setContests(data || []);
     } catch (error) {
       console.error("Error fetching contests:", error);
       toast.error("Failed to load contests");

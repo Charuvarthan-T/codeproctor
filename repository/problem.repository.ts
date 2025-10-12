@@ -38,6 +38,10 @@ export async function getProblemsWithPagination(
     const allowedSortColumns = ["id", "title", "description", "created_at"];
     const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+    const textColumns = ["title", "description"];
+    const safeSortExpr = textColumns.includes(safeSortBy)
+      ? `${safeSortBy === 'title' ? 'LOWER(p.title)' : 'LOWER(p.description)'}`
+      : safeSortBy;
 
     let problems, totalResult;
 
@@ -49,7 +53,7 @@ export async function getProblemsWithPagination(
         FROM problems p INNER JOIN users u ON p.created_by = u.id
         LEFT JOIN problems_users up ON p.id = up.problemid AND up.userid = ${userId}
         WHERE (p.title ILIKE ${searchPattern} OR p.description ILIKE ${searchPattern} OR p.id::text ILIKE ${searchPattern} OR up.is_completed::text ILIKE ${searchPattern})
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -62,7 +66,7 @@ export async function getProblemsWithPagination(
         SELECT p.id, p.title, p.description, p.created_at, u.name AS created_by, up.is_completed
         FROM problems p INNER JOIN users u ON p.created_by = u.id
         LEFT JOIN problems_users up ON p.id = up.problemid AND up.userid = ${userId}
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 

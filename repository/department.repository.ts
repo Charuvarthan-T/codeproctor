@@ -22,9 +22,10 @@ export async function getDepartmentsWithPagination(
   try {
     const offset = (page - 1) * pageSize;
     
-    const allowedSortColumns = ["id", "name"];
-    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
-    const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const allowedSortColumns = ["id", "name"];
+  const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
+  const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const safeSortExpr = safeSortBy === 'name' ? 'LOWER(name)' : safeSortBy;
 
     let departments, totalResult;
 
@@ -35,7 +36,7 @@ export async function getDepartmentsWithPagination(
       departments = await sql`
         SELECT id, name FROM departments
         WHERE name ILIKE ${searchPattern}
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -47,7 +48,7 @@ export async function getDepartmentsWithPagination(
 
       departments = await sql`
         SELECT id, name FROM departments
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 

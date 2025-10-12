@@ -76,6 +76,7 @@ export async function getContestsWithPagination(
       ? sortBy
       : "created_at";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+    const safeSortExpr = safeSortBy === 'title' ? 'LOWER(c.title)' : safeSortBy;
 
     let contests, totalResult;
 
@@ -91,7 +92,7 @@ export async function getContestsWithPagination(
         WHERE c.title ILIKE ${searchPattern} 
            OR c.description ILIKE ${searchPattern}
            OR u.name ILIKE ${searchPattern}
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -110,7 +111,7 @@ export async function getContestsWithPagination(
           (SELECT COUNT(*) FROM contests_sections WHERE contest_id = c.id) as section_count
         FROM contests c
         LEFT JOIN users u ON c.created_by = u.id
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -248,7 +249,7 @@ export async function getContestProblems(contestId: string) {
       FROM contests_problems cp
       INNER JOIN problems p ON cp.problem_id = p.id
       WHERE cp.contest_id = ${contestId}
-      ORDER BY cp.order_index ASC NULLS LAST, p.title ASC
+  ORDER BY cp.order_index ASC NULLS LAST, LOWER(p.title) ASC
     `;
     return problems;
   } catch (error) {
@@ -326,7 +327,7 @@ export async function getAvailableProblems(contestId: string) {
       WHERE p.id NOT IN (
         SELECT problem_id FROM contests_problems WHERE contest_id = ${contestId}
       )
-      ORDER BY p.title ASC
+  ORDER BY LOWER(p.title) ASC
     `;
     return problems;
   } catch (error) {
@@ -346,7 +347,7 @@ export async function getContestSections(contestId: string) {
       INNER JOIN sections s ON cs.section_id = s.id
       INNER JOIN semesters sem ON s.semesterid = sem.id
       WHERE cs.contest_id = ${contestId}
-      ORDER BY s.name ASC
+  ORDER BY LOWER(s.name) ASC
     `;
     return sections;
   } catch (error) {
@@ -401,7 +402,7 @@ export async function getAvailableSections(contestId: string) {
       WHERE s.id NOT IN (
         SELECT section_id FROM contests_sections WHERE contest_id = ${contestId}
       )
-      ORDER BY s.name ASC
+  ORDER BY LOWER(s.name) ASC
     `;
     return sections;
   } catch (error) {

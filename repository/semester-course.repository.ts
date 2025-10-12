@@ -9,7 +9,7 @@ export async function getSemesterCourses(semesterId: string) {
       FROM semesters_courses sc
       JOIN courses c ON sc.course_id = c.id
       WHERE sc.sem_id = ${semesterId}
-      ORDER BY c.name
+  ORDER BY LOWER(c.name)
     `;
 
     return { status: true, data: data };
@@ -77,7 +77,7 @@ export async function getCoursesBySemester(semesterId: string) {
       FROM semesters_courses sc
       JOIN courses c ON sc.course_id = c.id
       WHERE sc.sem_id = ${semesterId}
-      ORDER BY c.name
+  ORDER BY LOWER(c.name)
     `;
 
     return { status: true, data: data };

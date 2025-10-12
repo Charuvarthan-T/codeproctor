@@ -20,9 +20,10 @@ export async function getCoursesWithPagination(
 ) {
   try {
     const offset = (page - 1) * pageSize;
-    const allowedSortColumns = ["id", "name"];
-    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
-    const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const allowedSortColumns = ["id", "name"];
+  const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
+  const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+  const safeSortExpr = safeSortBy === 'name' ? 'LOWER(name)' : safeSortBy;
 
     let courses, totalResult;
 
@@ -31,7 +32,7 @@ export async function getCoursesWithPagination(
       courses = await sql`
         SELECT id, name FROM courses
         WHERE name ILIKE ${searchPattern}
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
       totalResult = await sql`
@@ -41,7 +42,7 @@ export async function getCoursesWithPagination(
     } else {
       courses = await sql`
         SELECT id, name FROM courses
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+  ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
       totalResult = await sql`SELECT COUNT(*) as count FROM courses`;

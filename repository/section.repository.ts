@@ -109,6 +109,12 @@ export async function getSectionsWithPagination(
       ? sortBy
       : "section_name";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+    // For DISTINCT queries, ORDER BY expressions must be in SELECT list
+    // We'll add LOWER expressions to SELECT and use those for ordering
+    const safeSortExpr =
+      safeSortBy === 'section_name' ? 'LOWER(sections.name)' :
+      safeSortBy === 'semester_name' ? 'LOWER(semesters.name)' :
+      safeSortBy;
 
     let sections, totalResult;
 
@@ -116,12 +122,13 @@ export async function getSectionsWithPagination(
       const searchPattern = `%${search}%`;
 
       sections = await sql`
-        SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, sections.isactive as is_active
+        SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, sections.isactive as is_active,
+               LOWER(sections.name) as section_name_lower, LOWER(semesters.name) as semester_name_lower
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
         WHERE sections.name ILIKE ${searchPattern} 
            OR semesters.name ILIKE ${searchPattern} 
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+        ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -135,11 +142,11 @@ export async function getSectionsWithPagination(
     } else {
       sections = await sql`
         SELECT DISTINCT sections.id, sections.name as section_name, semesters.name as semester_name, 
-               sections.isactive as is_active,
-               sections.semesterid
+               sections.isactive as is_active, sections.semesterid,
+               LOWER(sections.name) as section_name_lower, LOWER(semesters.name) as semester_name_lower
         FROM sections
         INNER JOIN semesters ON sections.semesterid = semesters.id
-        ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+        ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
         LIMIT ${pageSize} OFFSET ${offset}
       `;
 
@@ -198,7 +205,7 @@ export async function getCoursesForSection(sectionid: string) {
       JOIN semesters_courses sc ON sem.id = sc.sem_id
       JOIN courses c ON sc.course_id = c.id
       WHERE s.id = ${sectionid}
-      ORDER BY c.name
+      ORDER BY LOWER(c.name)
     `;
     return { status: true, data: data };
   } catch (e) {
@@ -238,7 +245,7 @@ export async function getAvailableFaculty(courseid: string, sectionid: string) {
           WHERE fcs.courseid = ${courseid}
             AND fcs.sectionid = ${sectionid}
         )
-      ORDER BY u.name
+      ORDER BY LOWER(u.name)
     `;
 
     return { status: true, data: faculty };

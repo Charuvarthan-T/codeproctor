@@ -23,6 +23,11 @@ export async function getUsersWithPagination(
   const allowedSortColumns = ["id", "name", "email", "role", "points_earned"];
     const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+    // Use case-insensitive ordering for textual columns
+    const textColumns = ["name", "email", "role"];
+    const safeSortExpr = textColumns.includes(safeSortBy)
+      ? `LOWER(${safeSortBy})`
+      : safeSortBy;
 
     let users, totalResult;
 
@@ -35,7 +40,7 @@ export async function getUsersWithPagination(
         users = await sql`
           SELECT id, name, email, role, COALESCE(points_earned, 0) as points_earned FROM users
           WHERE name ILIKE ${searchPattern} OR role ILIKE ${searchPattern}
-          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
           LIMIT ${pageSize} OFFSET ${offset}
         `;
       } catch (e) {
@@ -44,7 +49,7 @@ export async function getUsersWithPagination(
         users = await sql`
           SELECT id, name, email, role FROM users
           WHERE name ILIKE ${searchPattern} OR role ILIKE ${searchPattern}
-          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
           LIMIT ${pageSize} OFFSET ${offset}
         `;
         // normalize rows to include points_earned = 0
@@ -59,7 +64,7 @@ export async function getUsersWithPagination(
       try {
         users = await sql`
           SELECT id, name, email, role, COALESCE(points_earned, 0) as points_earned FROM users
-          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
           LIMIT ${pageSize} OFFSET ${offset}
         `;
       } catch (e) {
@@ -67,7 +72,7 @@ export async function getUsersWithPagination(
         console.warn('points_earned column missing or query failed; falling back to query without points:', err?.message || err);
         users = await sql`
           SELECT id, name, email, role FROM users
-          ORDER BY ${sql.unsafe(safeSortBy)} ${sql.unsafe(safeSortOrder)}
+          ORDER BY ${sql.unsafe(safeSortExpr)} ${sql.unsafe(safeSortOrder)}
           LIMIT ${pageSize} OFFSET ${offset}
         `;
         users = users.map((u: any) => ({ ...u, points_earned: 0 }));
@@ -118,7 +123,7 @@ export async function getMyCoursesForFaculty(facultyId: string) {
       JOIN sections s ON fcs.sectionid = s.id
       JOIN semesters sm ON s.semesterid = sm.id
       WHERE fcs.userid = ${facultyId}
-      ORDER BY c.name ASC`;
+  ORDER BY LOWER(c.name) ASC`;
     return courses;
   } catch (error) {
     console.error("Error getting my courses for faculty:", error);
@@ -136,7 +141,7 @@ export async function getMyCoursesForStudent(studentId: string) {
       JOIN semesters_courses sc ON sm.id = sc.sem_id
       JOIN courses c ON sc.course_id = c.id
       WHERE su.userid = ${studentId}
-      ORDER BY c.name ASC`;
+  ORDER BY LOWER(c.name) ASC`;
     return courses;
   } catch (error) {
     console.error("Error getting my courses for student:", error);

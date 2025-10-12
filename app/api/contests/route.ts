@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     // If student, return only contests they can access
     if (forStudent || session.user.role === "student") {
       const contests = await getContestsForStudent(session.user.id);
-      return NextResponse.json({ contests });
+      return NextResponse.json( contests );
     }
 
     const result = await getContestsWithPagination(
