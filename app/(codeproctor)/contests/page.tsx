@@ -182,7 +182,7 @@ export default function ContestsPage() {
             Create Contest
           </Button>
         </div>
-        <DataTable columns={columns} data={contests} />
+        <DataTable columns={columns} data={contests}/>
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-[600px]">
