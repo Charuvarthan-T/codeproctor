@@ -3,11 +3,25 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Calendar, Clock, Trophy, FileText, Play, CheckCircle2, Plus } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Trophy,
+  FileText,
+  Play,
+  CheckCircle2,
+  Plus,
+} from "lucide-react";
 import { contest } from "@/types/types";
 import { DataTable } from "@/components/data-table";
 import { columns } from "./columns";
@@ -39,7 +53,8 @@ export default function ContestsPage() {
     is_active: false,
   });
 
-  const isAdmin = session?.user?.role === "admin" || session?.user?.role === "faculty";
+  const isAdmin =
+    session?.user?.role === "admin" || session?.user?.role === "faculty";
 
   useEffect(() => {
     fetchContests();
@@ -54,7 +69,7 @@ export default function ContestsPage() {
       if (!response.ok) throw new Error("Failed to fetch contests");
       const data = await response.json();
       console.log("Contests received:", data);
-      setContests(data.contests || []);
+      setContests(data || []);
     } catch (error) {
       console.error("Error fetching contests:", error);
       toast.error("Failed to load contests");
@@ -96,7 +111,7 @@ export default function ContestsPage() {
         duration_minutes: "",
         is_active: false,
       });
-      
+
       router.push(`/contests/${data.contest.id}`);
     } catch (error) {
       console.error("Error creating contest:", error);
@@ -154,20 +169,19 @@ export default function ContestsPage() {
   // Admin/Faculty View - Table
   if (isAdmin) {
     return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-between items-center mb-6">
+      <div>
+        <div className="flex items-center justify-between p-4">
           <div>
-            <h1 className="text-3xl font-bold">Contests</h1>
-            <p className="text-muted-foreground">
+            <CardTitle className="text-3xl">Contests</CardTitle>
+            <CardDescription>
               Manage coding contests and quizzes
-            </p>
+            </CardDescription>
           </div>
           <Button onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Create Contest
           </Button>
         </div>
-
         <DataTable columns={columns} data={contests} />
 
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -287,8 +301,12 @@ export default function ContestsPage() {
   }
 
   // Student View - Cards
-  const upcomingContests = contests.filter((c) => getContestStatus(c) === "upcoming");
-  const activeContests = contests.filter((c) => getContestStatus(c) === "active");
+  const upcomingContests = contests.filter(
+    (c) => getContestStatus(c) === "upcoming"
+  );
+  const activeContests = contests.filter(
+    (c) => getContestStatus(c) === "active"
+  );
   const endedContests = contests.filter((c) => getContestStatus(c) === "ended");
 
   return (
@@ -320,10 +338,15 @@ export default function ContestsPage() {
               </h2>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {activeContests.map((contest) => (
-                  <Card key={contest.id} className="border-green-200 dark:border-green-900">
+                  <Card
+                    key={contest.id}
+                    className="border-green-200 dark:border-green-900"
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl">{contest.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {contest.title}
+                        </CardTitle>
                         {getStatusBadge("active")}
                       </div>
                       {contest.description && (
@@ -353,7 +376,8 @@ export default function ContestsPage() {
                             <div className="flex justify-between text-sm mb-1">
                               <span>Progress</span>
                               <span className="font-medium">
-                                {contest.solved_count}/{contest.problem_count || 0}
+                                {contest.solved_count}/
+                                {contest.problem_count || 0}
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
@@ -371,7 +395,9 @@ export default function ContestsPage() {
                         )}
                         <Button
                           className="w-full mt-2"
-                          onClick={() => router.push(`/contests/${contest.id}/take`)}
+                          onClick={() =>
+                            router.push(`/contests/${contest.id}/take`)
+                          }
                         >
                           {contest.solved_count ? "Continue" : "Start Contest"}
                         </Button>
@@ -392,10 +418,15 @@ export default function ContestsPage() {
               </h2>
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {upcomingContests.map((contest) => (
-                  <Card key={contest.id} className="border-blue-200 dark:border-blue-900">
+                  <Card
+                    key={contest.id}
+                    className="border-blue-200 dark:border-blue-900"
+                  >
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl">{contest.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {contest.title}
+                        </CardTitle>
                         {getStatusBadge("upcoming")}
                       </div>
                       {contest.description && (
@@ -440,7 +471,9 @@ export default function ContestsPage() {
                   <Card key={contest.id} className="opacity-75">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <CardTitle className="text-xl">{contest.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {contest.title}
+                        </CardTitle>
                         {getStatusBadge("ended")}
                       </div>
                       {contest.description && (
@@ -464,7 +497,8 @@ export default function ContestsPage() {
                             <div className="flex justify-between text-sm mb-1">
                               <span>Your Score</span>
                               <span className="font-medium">
-                                {contest.solved_count}/{contest.problem_count || 0}
+                                {contest.solved_count}/
+                                {contest.problem_count || 0}
                               </span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
@@ -484,17 +518,12 @@ export default function ContestsPage() {
                           <Button
                             variant="outline"
                             className="flex-1"
-                            onClick={() => router.push(`/contests/${contest.id}/leaderboard`)}
+                            onClick={() =>
+                              router.push(`/contests/${contest.id}/leaderboard`)
+                            }
                           >
                             <Trophy className="h-4 w-4 mr-2" />
                             Results
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => router.push(`/contests/${contest.id}`)}
-                          >
-                            Review
                           </Button>
                         </div>
                       </div>

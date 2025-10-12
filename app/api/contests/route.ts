@@ -33,22 +33,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ contests });
     }
 
-    // Admin/Faculty - use pagination if parameters explicitly provided
-    if (pageParam || pageSizeParam) {
-      const result = await getContestsWithPagination(
-        page,
-        pageSize,
-        search,
-        sortBy,
-        sortOrder
-      );
-      console.log("Paginated contests result:", result);
-      return NextResponse.json(result);
-    }
-
-    const contests = await getAllContests();
-    console.log("All contests fetched:", contests.length, "contests");
-    return NextResponse.json({ contests });
+    const result = await getContestsWithPagination(
+      page,
+      pageSize,
+      search,
+      sortBy,
+      sortOrder
+    );
+    console.log("Paginated contests result:", result);
+    return NextResponse.json(result.data);
   } catch (error) {
     console.error("Error fetching contests:", error);
     return NextResponse.json(
@@ -73,7 +66,14 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, description, start_time, end_time, duration_minutes, is_active } = body;
+    const {
+      title,
+      description,
+      start_time,
+      end_time,
+      duration_minutes,
+      is_active,
+    } = body;
 
     if (!title || !start_time || !end_time) {
       return NextResponse.json(

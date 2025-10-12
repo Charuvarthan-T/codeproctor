@@ -165,6 +165,7 @@ export async function CheckProblemCompletedUser(
   return result[0]?.is_completed || "unsolved";
 }
 
+// Points logic
 export async function awardPointsForProblem(
   userId: string,
   problemId: string,
@@ -173,65 +174,33 @@ export async function awardPointsForProblem(
   try {
     const existing =
       await sql`SELECT is_completed FROM problems_users WHERE userid = ${userId} AND problemid = ${problemId}`;
+
     if (existing[0]?.is_completed === "solved") {
-      try {
-        const totals =
-          await sql`SELECT points_earned FROM users WHERE id = ${userId}`;
-        const totalPoints = totals[0]?.points_earned ?? null;
-        return { awarded: false, totalPoints };
-      } catch (e) {
-        return { awarded: false, totalPoints: null };
-      }
+      const totals =
+        await sql`SELECT points_earned FROM users WHERE id = ${userId}`;
+      const totalPoints = totals[0]?.points_earned ?? 0;
+      return { awarded: false, totalPoints };
     }
 
-    await sql`INSERT INTO problems_users (userid, problemid, is_completed) VALUES (${userId}, ${problemId}, 'solved') ON CONFLICT (userid, problemid) DO UPDATE SET is_completed = 'solved'`;
+    await sql`
+    INSERT INTO problems_users (userid, problemid, is_completed)
+    VALUES (${userId}, ${problemId}, 'solved')
+    ON CONFLICT (userid, problemid)
+    DO UPDATE SET is_completed = 'solved'`;
 
-    try {
-      await sql`UPDATE users SET points_earned = COALESCE(points_earned, 0) + ${points} WHERE id = ${userId}`;
-    } catch (updateErr: any) {
-      const msg = (updateErr?.message || "").toLowerCase();
-      if (msg.includes("points_earned") || msg.includes("does not exist")) {
-        console.warn(
-          "points_earned column missing; attempting to add column and retry update"
-        );
-        try {
-          await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 0`;
-          await sql`UPDATE users SET points_earned = COALESCE(points_earned, 0) + ${points} WHERE id = ${userId}`;
-        } catch (ddlErr: any) {
-          console.error(
-            "Failed to create points_earned column or update it:",
-            ddlErr?.message || ddlErr
-          );
-        }
-      } else {
-        throw updateErr;
-      }
-    }
+    await sql`
+    UPDATE users
+    SET points_earned = COALESCE(points_earned, 0) + ${points}
+    WHERE id = ${userId}`;
 
-    try {
-      await sql`
-        CREATE TABLE IF NOT EXISTS user_points_log (
-          id UUID PRIMARY KEY,
-          userid UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          problemid UUID NOT NULL REFERENCES problems(id) ON DELETE CASCADE,
-          points INTEGER NOT NULL,
-          awarded_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-        )`;
-
-      const id = (globalThis as any)?.crypto?.randomUUID
-        ? (globalThis as any).crypto.randomUUID()
-        : require("crypto").randomUUID();
-      await sql`INSERT INTO user_points_log (id, userid, problemid, points) VALUES (${id}, ${userId}, ${problemId}, ${points})`;
-    } catch (e: any) {
-      console.warn(
-        "user_points_log handling failed (table may not exist or permissions denied):",
-        e?.message || e
-      );
-    }
+    const id = crypto.randomUUID();
+    await sql`
+    INSERT INTO user_points_log (id, userid, problemid, points)
+    VALUES (${id}, ${userId}, ${problemId}, ${points})`;
 
     const totals =
       await sql`SELECT points_earned FROM users WHERE id = ${userId}`;
-    const totalPoints = totals[0]?.points_earned ?? null;
+    const totalPoints = totals[0]?.points_earned ?? 0;
 
     return { awarded: true, totalPoints };
   } catch (error) {
@@ -335,16 +304,13 @@ export async function getProblemTemplateByLanguage(
   }
 }
 
-// Create problem with test cases
 export async function createProblemWithTestCases(
   problemData: createProblem,
   testCases: { input: string; output: string }[]
 ) {
   try {
-    // Create the problem
     const problem = await createProblem(problemData);
 
-    // Create and link test cases
     for (const testCase of testCases) {
       const testCaseResult = await sql`
         INSERT INTO testcases (input, output) 
@@ -354,7 +320,6 @@ export async function createProblemWithTestCases(
 
       const testCaseId = testCaseResult[0].id;
 
-      // Link test case to problem
       await sql`
         INSERT INTO problems_testcases (problem_id, testcase_id) 
         VALUES (${problem.id}, ${testCaseId})

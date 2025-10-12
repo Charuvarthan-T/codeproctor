@@ -65,8 +65,16 @@ export async function getContestsWithPagination(
   try {
     const offset = (page - 1) * pageSize;
 
-    const allowedSortColumns = ["title", "start_time", "end_time", "is_active", "created_at"];
-    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "created_at";
+    const allowedSortColumns = [
+      "title",
+      "start_time",
+      "end_time",
+      "is_active",
+      "created_at",
+    ];
+    const safeSortBy = allowedSortColumns.includes(sortBy)
+      ? sortBy
+      : "created_at";
     const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
 
     let contests, totalResult;
@@ -132,7 +140,7 @@ export async function getAllContests() {
     const contests = await sql`
       SELECT c.*, u.name as created_by_name
       FROM contests c
-      LEFT JOIN users u ON c.created_by = u.id
+      INNER JOIN users u ON c.created_by = u.id
       ORDER BY c.created_at DESC
     `;
     return contests;
@@ -148,7 +156,7 @@ export async function getContestById(id: string) {
     const result = await sql`
       SELECT c.*, u.name as created_by_name
       FROM contests c
-      LEFT JOIN users u ON c.created_by = u.id
+      INNER JOIN users u ON c.created_by = u.id
       WHERE c.id = ${id}
     `;
     return result[0] || null;
@@ -163,8 +171,12 @@ export async function createContest(contest: CreateContestDTO) {
   try {
     const result = await sql`
       INSERT INTO contests (title, description, created_by, start_time, end_time, duration_minutes, is_active)
-      VALUES (${contest.title}, ${contest.description || null}, ${contest.created_by}, 
-              ${contest.start_time}, ${contest.end_time}, ${contest.duration_minutes || null}, 
+      VALUES (${contest.title}, ${contest.description || null}, ${
+      contest.created_by
+    }, 
+              ${contest.start_time}, ${contest.end_time}, ${
+      contest.duration_minutes || null
+    }, 
               ${contest.is_active !== undefined ? contest.is_active : false})
       RETURNING *
     `;
@@ -177,36 +189,31 @@ export async function createContest(contest: CreateContestDTO) {
 
 // Update contest
 export async function updateContest(id: string, updates: UpdateContestDTO) {
-  try { 
-    const setParts: any[] = [];
+  try {
+    const contest = await getContestById(id);
 
     if (updates.title !== undefined) {
-      setParts.push(sql`title = ${updates.title}`);
+      contest.title = updates.title;
     }
     if (updates.description !== undefined) {
-      setParts.push(sql`description = ${updates.description}`);
+      contest.description = updates.description;
     }
     if (updates.start_time !== undefined) {
-      setParts.push(sql`start_time = ${updates.start_time}`);
+      contest.start_time = updates.start_time;
     }
     if (updates.end_time !== undefined) {
-      setParts.push(sql`end_time = ${updates.end_time}`);
+      contest.end_time = updates.end_time;
     }
     if (updates.duration_minutes !== undefined) {
-      setParts.push(sql`duration_minutes = ${updates.duration_minutes}`);
+      contest.duration_minutes = updates.duration_minutes;
     }
     if (updates.is_active !== undefined) {
-      setParts.push(sql`is_active = ${updates.is_active}`);
-    }
-
-    if (setParts.length === 0) {
-      // Nothing to update
-      return await getContestById(id);
+      contest.is_active = updates.is_active;
     }
 
     const result = await sql`
       UPDATE contests 
-      SET ${sql.unsafe(setParts.join(", "))}, updated_at = now()
+      SET title = ${contest.title}, description = ${contest.description}, start_time = ${contest.start_time}, end_time = ${contest.end_time}, duration_minutes = ${contest.duration_minutes}, is_active = ${contest.is_active}, updated_at = now()
       WHERE id = ${id}
       RETURNING *
     `;
@@ -292,7 +299,10 @@ export async function updateContestProblemPoints(
 }
 
 // Remove problem from contest
-export async function removeProblemFromContest(contestId: string, problemId: string) {
+export async function removeProblemFromContest(
+  contestId: string,
+  problemId: string
+) {
   try {
     const result = await sql`
       DELETE FROM contests_problems 
@@ -346,7 +356,10 @@ export async function getContestSections(contestId: string) {
 }
 
 // Add section to contest
-export async function addSectionToContest(contestId: string, sectionId: string) {
+export async function addSectionToContest(
+  contestId: string,
+  sectionId: string
+) {
   try {
     const result = await sql`
       INSERT INTO contests_sections (contest_id, section_id)
@@ -361,7 +374,10 @@ export async function addSectionToContest(contestId: string, sectionId: string) 
 }
 
 // Remove section from contest
-export async function removeSectionFromContest(contestId: string, sectionId: string) {
+export async function removeSectionFromContest(
+  contestId: string,
+  sectionId: string
+) {
   try {
     const result = await sql`
       DELETE FROM contests_sections 
@@ -423,7 +439,10 @@ export async function recordContestSubmission(
 }
 
 // Get user's contest submissions
-export async function getUserContestSubmissions(contestId: string, userId: string) {
+export async function getUserContestSubmissions(
+  contestId: string,
+  userId: string
+) {
   try {
     const submissions = await sql`
       SELECT cs.*, p.title as problem_title, p.description as problem_description
@@ -466,12 +485,10 @@ export async function getContestLeaderboard(contestId: string) {
 // Mark contest as started for user
 export async function markContestStarted(contestId: string, userId: string) {
   try {
-    // Get all problems in the contest
     const problems = await sql`
       SELECT problem_id FROM contests_problems WHERE contest_id = ${contestId}
     `;
 
-    // Create submission records for all problems
     for (const problem of problems) {
       await sql`
         INSERT INTO contest_submissions (contest_id, user_id, problem_id, started_at)
