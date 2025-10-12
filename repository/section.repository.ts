@@ -112,8 +112,8 @@ export async function getSectionsWithPagination(
     // For DISTINCT queries, ORDER BY expressions must be in SELECT list
     // We'll add LOWER expressions to SELECT and use those for ordering
     const safeSortExpr =
-      safeSortBy === 'section_name' ? 'LOWER(sections.name)' :
-      safeSortBy === 'semester_name' ? 'LOWER(semesters.name)' :
+      safeSortBy === 'section_name' ? 'section_name_lower' :
+      safeSortBy === 'semester_name' ? 'semester_name_lower' :
       safeSortBy;
 
     let sections, totalResult;
