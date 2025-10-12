@@ -24,6 +24,7 @@ export async function getUnassignedUsers(sectionid: string) {
       WHERE u.id NOT IN (
         SELECT su.userid FROM sections_users su
       )
+      and u.role = 'student'
     `;
     return { status: true, data: users };
   } catch (e) {
@@ -54,7 +55,7 @@ export async function unassignUserFromSection(
   try {
     await sql`
       DELETE FROM sections_users 
-      WHERE sectionid = ${sectionid} AND userid = ${userid}
+      WHERE sectionid = ${sectionid} AND userid = ${userid} 
     `;
     return { status: true };
   } catch (e) {
@@ -223,7 +224,7 @@ export async function getAssignedFacultyForACourse(
       SELECT u.id, u.name, u.email
       FROM users u
       JOIN faculty_courses_section fcs ON u.id = fcs.userid
-      WHERE fcs.courseid = ${courseid} AND fcs.sectionid = ${sectionid}
+      WHERE fcs.courseid = ${courseid} AND fcs.sectionid = ${sectionid} and (u.role = 'faculty' or u.role = 'admin')
     `;
     return { status: true, data: faculty };
   } catch (e) {

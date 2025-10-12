@@ -126,7 +126,7 @@ export const createSectionColumns = (
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem onClick={handleViewCourses}>
-                View Courses
+                Assign Faculty
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
