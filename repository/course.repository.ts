@@ -20,10 +20,10 @@ export async function getCoursesWithPagination(
 ) {
   try {
     const offset = (page - 1) * pageSize;
-  const allowedSortColumns = ["id", "name"];
-  const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
-  const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
-  const safeSortExpr = safeSortBy === 'name' ? 'LOWER(name)' : safeSortBy;
+    const allowedSortColumns = ["id", "name"];
+    const safeSortBy = allowedSortColumns.includes(sortBy) ? sortBy : "id";
+    const safeSortOrder = sortOrder === "desc" ? "DESC" : "ASC";
+    const safeSortExpr = safeSortBy === "name" ? "LOWER(name)" : safeSortBy;
 
     let courses, totalResult;
 
@@ -55,7 +55,7 @@ export async function getCoursesWithPagination(
       total,
       page,
       pageSize,
-      totalPages: Math.ceil(total / pageSize)
+      totalPages: Math.ceil(total / pageSize),
     };
   } catch (error) {
     console.error("Error getting paginated courses:", error);
@@ -78,7 +78,8 @@ export async function editCourse(body: course) {
 
 export async function createCourse(body: { name: string }) {
   try {
-    const res = await sql`INSERT INTO courses (name) VALUES (${body.name}) RETURNING id, name`;
+    const res =
+      await sql`INSERT INTO courses (name) VALUES (${body.name}) RETURNING id, name`;
     return {
       success: true,
       message: `Added new course ${res[0].id} ${res[0].name}`,
