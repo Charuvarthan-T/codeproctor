@@ -1,3 +1,4 @@
+// client rendered to make further reloads faster
 "use client";
 
 import { Header } from "@/components/header";
